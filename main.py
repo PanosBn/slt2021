@@ -45,13 +45,14 @@ def main():
 
     #def find_neighbours(x_train, number_of_neighbours) -> int:
 
-    #def euclidian_distance(vector1, vector2):
+    # by two vectors we mean two rows
+    #def euclidian_distance(vector1, vector2): return np.sqrt(np.sum(vector1 - vector2)**2)
 
     #def fit():
 
     #def predict(x_train, y_train, x_test, y_test, find_neihgbours()):
 
-    #def knn_classifier(x_train, y_train, x_test, y_test, number_of_neighbours)
+    #def knn_classifier(x_train, y_train, x_test, y_test, number_of_neighbours):
 
 
 if __name__ == "__main__":
