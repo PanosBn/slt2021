@@ -1,7 +1,6 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict
 
 def main():
     # df = pd.read_csv("data/MNIST_train_small.csv", index_col=False)
@@ -46,39 +45,15 @@ def main():
 
     #def find_neighbours(x_train, number_of_neighbours) -> int:
 
-    # distance between two vectors we mean two rows
-    def euclidian_distance(row1, row2): return np.sqrt(np.sum(row1 - row2)**2)
-
-    # find most common labels of the k neighbours
-    def majority_of_knn(y_train):
-        counter = defaultdict(int)
-        for label in y_train:
-            counter[label]+=1
-        majority_count = max(counter.values())
-        for key, value in counter.items():
-            if value == majority_count:
-                return key
+    # by two vectors we mean two rows
+    #def euclidian_distance(vector1, vector2): return np.sqrt(np.sum(vector1 - vector2)**2)
 
     #def fit():
 
-    def predict(k, x_train, y_train, x_test, y_test):
-        distances = [(euclidian_distance(x_test, x_train), label) for (row, label) in zip(x_train, y_train)]
-        sorted_distances = sorted(distances, key=lambda (distance, _): distance)
-
-        k_labels = [label for (_, label) in sorted_distances[:k]]
-        return majority_of_knn(k_labels)
+    #def predict(x_train, y_train, x_test, y_test, find_neihgbours()):
 
     #def knn_classifier(x_train, y_train, x_test, y_test, number_of_neighbours):
-    
-    i = 0
-    total_correct = 0
-    for test_row in x_test:
-        pred = predict(10, x_train, y_train, test_row)
-        if pred == y_test[i]:
-            total_correct += 1
-        acc = (total_correct / (i+1)) * 100
-        print('test image['+str(i)+']', '\tpred:', pred, '\torig:', test_labels[i], '\tacc:', str(round(acc, 2))+'%')
-        i += 1
+
 
 if __name__ == "__main__":
     main()
