@@ -5,3 +5,4 @@ bin/
 .vscode/
 lib/
 *.cfg
+data/MNIST_train.csv
