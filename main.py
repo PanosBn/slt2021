@@ -1,3 +1,4 @@
+
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,8 +6,7 @@ import math
 from collections import defaultdict
 from metrics import euclidean_distance, accuracy_score
 from KnnClassifier import KnnClassifier
-import altair as alt
-#import tensorflow as tf 
+from tqdm import tqdm
 
 
 def main():
@@ -39,22 +39,24 @@ def main():
 
     # clf = KnnClassifier(x_train,y_train,5).predict(x_test,y_test)
     # k = 5
-    y_train_predictions = 0
-    y_test_predictions = 0
+    y_train_predictions = []
+    y_test_predictions = []
     y_train_loss = 0
     y_test_loss = 0
-    for k in range(1,5):
+    for k in tqdm(range(1,21)):
         clf = KnnClassifier(x_train,y_train,k)
-        y_train_predictions = clf.predict(x_train[:10])
+        # y_train_predictions = clf.predict(x_train[:50])
+        y_test_predictions = clf.predict(x_test[:50])
+        print(y_test_predictions)
         # y_test_predictions = clf.predict(x_train[:100])
         
-    print(len(y_train_predictions))
-    # print(type(y_train[:10]))
-    print(type(y_train_predictions))
-    train_accuracy = accuracy_score(y_train[:10], y_test_predictions)
-    print("Train accuracy: ", train_accuracy)
-    print(y_train[:10])
-    print(y_train_predictions)
+    # print(len(y_train_predictions))
+    # # print(type(y_train[:10]))
+    # print(type(y_train_predictions))
+    # train_accuracy = accuracy_score(y_train[:10], y_test_predictions)
+    # print("Train accuracy: ", train_accuracy)
+    # print(y_train[:10])
+    # print(y_train_predictions)
     
     # classes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 

@@ -22,7 +22,6 @@ class KnnClassifier:
             distances = [(euclidean_distance(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
             k_labels = [label for (_, label) in sorted_distances[:self.neighbours]]
-
             counter = defaultdict(int)
             for label in k_labels:
                 counter[label] += 1
@@ -53,5 +52,5 @@ class KnnClassifier:
         print('\tTime elapsed:', elapsed_time)
         # print('\toverall accuracy:', str(round(acc, 2))+'%')
         # print('\tnumber of errors:', total_error, 'out of', n_rows)
+        print(len(predictions))
         return predictions
-
