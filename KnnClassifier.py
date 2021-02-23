@@ -10,6 +10,8 @@ class KnnClassifier:
         self.x_train = x_train
         self.y_train = y_train
         # self.neighbours = neighbours
+
+
     
     def predict(self, x_s, neighbours):
         i = 0
@@ -19,22 +21,34 @@ class KnnClassifier:
         predictions = []
         t = time.process_time()
         # print("\tNumber of neighbours: ", neighbours)
+
+        def find_label(labels):
+            counter = defaultdict(int)
+            for label in labels:
+                counter[label] += 1
+            # find the majority class:
+            majority_count = max(counter.values())
+            for key, value in counter.items():
+                if value == majority_count:
+                    return key
+
         for test_digit in x_s:
             distances = [(euclidean_distance(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
             k_labels = [label for (_, label) in sorted_distances[:neighbours]]
             # print("\tNumber of labels:" ,k_labels)
-            counter = defaultdict(int)
-            for label in k_labels:
-                counter[label] += 1
-            # find the majority class:
-            majority_count = max(counter.values())
-            # print(counter)
-            for key, value in counter.items():
-                if value == majority_count:
-                    pred = key
-                    predictions.append(pred)
-                    break
+            # counter = defaultdict(int)
+            # for label in k_labels:
+            #     counter[label] += 1
+            # # find the majority class:
+            # majority_count = max(counter.values())
+            # # print(counter)
+            # for key, value in counter.items():
+            #     if value == majority_count:
+            #         pred = key
+            #         predictions.append(pred)
+            #         break
+            predictions.append(find_label(k_labels))
  
             # output the prediction
             # i = 0
