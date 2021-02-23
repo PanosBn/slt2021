@@ -6,31 +6,35 @@ from metrics import euclidean_distance
 
 
 class KnnClassifier:
-    def __init__(self, x_train, y_train, neighbours):
+    def __init__(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
-        self.neighbours = neighbours
+        # self.neighbours = neighbours
     
-    def predict(self, x_s):
+    def predict(self, x_s, neighbours):
         i = 0
         total_error = 0
         error = ""
         n_rows, n_col = x_s.shape
         predictions = []
         t = time.process_time()
+        # print("\tNumber of neighbours: ", neighbours)
         for test_digit in x_s:
             distances = [(euclidean_distance(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
-            k_labels = [label for (_, label) in sorted_distances[:self.neighbours]]
+            k_labels = [label for (_, label) in sorted_distances[:neighbours]]
+            # print("\tNumber of labels:" ,k_labels)
             counter = defaultdict(int)
             for label in k_labels:
                 counter[label] += 1
             # find the majority class:
             majority_count = max(counter.values())
+            # print(counter)
             for key, value in counter.items():
                 if value == majority_count:
                     pred = key
-                    predictions.append(key)
+                    predictions.append(pred)
+                    break
  
             # output the prediction
             # i = 0
@@ -43,12 +47,12 @@ class KnnClassifier:
                 # error = "ERROR"
 
             # print('test['+str(i)+']', '\tpredicted label is', pred, '\ttrue label is', y_test[i], error)
-            i += 1
+            # i += 1
             # error = ""
 
         # acc = ((n_rows - total_error) / n_rows) * 100
         elapsed_time = time.process_time() - t
-        print('\tFor ',self.neighbours, 'neighbours:')
+        print('\tFor ',neighbours, 'neighbours:')
         print('\tTime elapsed:', elapsed_time)
         # print('\toverall accuracy:', str(round(acc, 2))+'%')
         # print('\tnumber of errors:', total_error, 'out of', n_rows)

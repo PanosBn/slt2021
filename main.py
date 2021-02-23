@@ -28,8 +28,8 @@ def main():
     # or pick smaller subsets of the dataset:
     x_train = train.values[:3000,1:]
     y_train = train.values[:3000,0]
-    x_test = test.values[:100,1:]
-    y_test = test.values[:100,0]
+    x_test = test.values[:150,1:]
+    y_test = test.values[:150,0]
     
     '''
     # show a summary
@@ -44,16 +44,17 @@ def main():
     y_train_loss = 0
     y_test_loss = 0
     for k in tqdm(range(1,21)):
-        clf = KnnClassifier(x_train,y_train,k)
+        clf = KnnClassifier(x_train,y_train)
         # y_train_predictions = clf.predict(x_train[:50])
-        y_test_predictions = clf.predict(x_test[:50])
+        y_test_predictions = clf.predict(x_test[:50],k)
         print(y_test_predictions)
+        train_accuracy = accuracy_score(y_test[:50], y_test_predictions[:50])
         # y_test_predictions = clf.predict(x_train[:100])
-        
+      
     # print(len(y_train_predictions))
     # # print(type(y_train[:10]))
     # print(type(y_train_predictions))
-    # train_accuracy = accuracy_score(y_train[:10], y_test_predictions)
+    # train_accuracy = accuracy_score(y_train[:10], y_test_predictions[:10])
     # print("Train accuracy: ", train_accuracy)
     # print(y_train[:10])
     # print(y_train_predictions)

@@ -13,10 +13,10 @@ def accuracy_score(a, b) :
         if i != j: 
             print(i, "<-predicted, true answer ->", j)
             total_error = total_error + 1
-        elif (i == j):
-            print("\tCorrect Prediction")
-            print("\t",i, "<-predicted, true answer ->", j)
-    if(total_error == 0):
-        return 1
-    else:
+    #     elif (i == j):
+    #         print("\tCorrect Prediction")
+    #         print("\t",i, "<-predicted, true answer ->", j)
+    # if(total_error == 0):
+    #     return 1
+    # else:
         return len(a)-total_error/len(a)
