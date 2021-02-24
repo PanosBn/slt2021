@@ -1,4 +1,3 @@
-
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,61 +32,60 @@ def plot_q3(y_train_predictions, y_test_predictions, l):
 
 def main():
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv")
-    test_small  = pd.read_csv("data/MNIST_test_small.csv")
-
-    train = pd.read_csv("data/MNIST_train.csv")
-    test  = pd.read_csv("data/MNIST_test_small.csv")
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500)
 
     
     # split both datasets to digits and labels (the first item in every row is a label):
-    # x_train = train_small.values[:,1:]
-    # y_train = train_small.values[:,0]
-    # x_test = test_small.values[:,1:]
-    # y_test = test_small.values[:,0]
+    x_train = train_small.values[:,1:]
+    y_train = train_small.values[:,0]
+    x_test = test_small.values[:,1:]
+    y_test = test_small.values[:,0]
     
 
     # or pick smaller subsets of the dataset:
-    x_train = train.values[:2900,1:]
-    y_train = train.values[:2900,0]
-    x_test = test.values[:900,1:]
-    y_test = test.values[:900,0]
-    
-    '''
-    # show a summary
-    train.info()
-    test.info()
-    '''
+    #x_train = train.values[:2900,1:]
+    #y_train = train.values[:2900,0]
 
     # clf = KnnClassifier(x_train,y_train,5).predict(x_test,y_test)
     # k = 5
+    '''
     y_train_predictions_set = []
     y_test_predictions_set= []
     y_test_prediction_set_errors = []
     y_train_predictions_set_errors= []
     y_train_loss = 0
     y_test_loss = 0
-    ll = 11
-    for k in tqdm(range(1,ll)):
-        clf = KnnClassifier(x_train,y_train)
-        # y_train_predictions = clf.predict(x_train[:50])
-        y_test_predictions = clf.predict(x_test[:90],k)
-        y_train_predictions = clf.predict(x_train[:290],k)
-        # print(y_test_predictions)
-        accuracy_test = accuracy_score(y_test[:90], y_test_predictions[:90])
-        accuracy_train = accuracy_score(y_train[:290], y_train_predictions[:290])
-        y_test_predictions_set.append(accuracy_test)
-        y_train_predictions_set.append(accuracy_train)
-
-        # y_test_prediction_set_errors.append(accuracy_test_errors)
-        # y_train_predictions_set_errors.append(accuracy_test_errors)
-        # print(train_accuracy)
-        # y_test_predictions = clf.predict(x_train[:100])
     
-    for item in y_train_predictions_set:
-        print(type(item))
-    for item in y_test_predictions_set:
-        print(type(item))
+    '''
+    test_predictions, train_predictions = [], []
+    looc_test_predictions, looc_train_predictions = [], []
+
+    ll = 11 
+    # loop over number of neighbors
+    for k in tqdm(range(1,ll)):
+        clf = KnnClassifier(n_neighbors=k)
+        clf.fit(x_train, y_train)
+
+        # normal
+        accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
+        accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
+        test_predictions.append(accuracy_test)
+        train_predictions.append(accuracy_train)
+
+        # looc
+        looc_accuracy_train = clf.looc_validate(x_train, y_train)
+        looc_accuracy_test = clf.looc_validate(x_test, y_test)
+        looc_test_predictions.append(looc_accuracy_test)
+        looc_train_predictions.append(looc_accuracy_train)
+
+    # plot graphs train vs test score vs n neighbors
+    plot_q3(train_predictions, test_predictions, ll-1)
+    plot_q3(looc_train_predictions, looc_test_predictions, ll-1)
+
+    
+
+
     # y_train_predictions_set = y_train_predictions_set.sort()
 
     # y_test_predictions_set = y_test_predictions_set.sort()
@@ -97,7 +95,6 @@ def main():
     # df_result['test pred'] = y_test_predictions_set
     # print(df_result)
 
-    plot_q3(y_train_predictions_set, y_test_predictions_set, ll-1)
     # print(len(y_train_predictions))
     # # print(type(y_train[:10]))
     # print(type(y_train_predictions))
@@ -121,6 +118,7 @@ def main():
     # #             plt.title(cls)
     
     # # #plt.show()
+
 
 if __name__ == "__main__":
     main()

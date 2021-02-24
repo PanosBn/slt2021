@@ -4,71 +4,74 @@ from collections import defaultdict
 import time
 from metrics import euclidean_distance
 
-
 class KnnClassifier:
-    def __init__(self, x_train, y_train):
+    def __init__(self, n_neighbors=5):
+        self.n_neighbors = n_neighbors
+
+    def fit(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
-        # self.neighbours = neighbours
 
+    def looc_validate(self, X, y):
+        """
+        :param X: matrix of features
+        :param y: target label
+        :returns: total leave-one-out-cross-validation score
+        """
+        predictions, targets = [], []
+        for i in range(0, len(y)): # we loop over each instance and subtract it from the train set (looc)
+            
+            # effictively the same as fitting just minus one instance
+            self.x_train = X
+            self.y_train = y
+            np.delete(self.x_train, i)
+            np.delete(self.y_train, i)
 
-    
-    def predict(self, x_s, neighbours):
-        i = 0
-        total_error = 0
-        error = ""
-        n_rows, n_col = x_s.shape
+            pred = self.predict([X[i]]) # has to take a list
+            predictions.append(*pred) # returns a list therefore unpack with *
+            targets.append(y[i])        
+
+        return self.accuracy_score(predictions, targets) 
+
+    def predict(self, X):
+        """
+        :param X: matrix of features
+        :returns: predictions in list
+        """
         predictions = []
         t = time.process_time()
-        # print("\tNumber of neighbours: ", neighbours)
 
         def find_label(labels):
-            counter = defaultdict(int)
-            for label in labels:
-                counter[label] += 1
-            # find the majority class:
-            majority_count = max(counter.values())
-            for key, value in counter.items():
-                if value == majority_count:
-                    return key
+            return max(set(labels), key=labels.count) # returns the mode / most common label
 
-        for test_digit in x_s:
+        for test_digit in X:
             distances = [(euclidean_distance(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
-            k_labels = [label for (_, label) in sorted_distances[:neighbours]]
-            # print("\tNumber of labels:" ,k_labels)
-            # counter = defaultdict(int)
-            # for label in k_labels:
-            #     counter[label] += 1
-            # # find the majority class:
-            # majority_count = max(counter.values())
-            # # print(counter)
-            # for key, value in counter.items():
-            #     if value == majority_count:
-            #         pred = key
-            #         predictions.append(pred)
-            #         break
+            k_labels = [label for (_, label) in sorted_distances[:self.n_neighbors]]
             predictions.append(find_label(k_labels))
- 
-            # output the prediction
-            # i = 0
-            # total_error = 0
-            # error = ""
-            # n_rows, n_col = x_test.shape
 
-            # if pred != y_test[i]:
-            #     total_error += 1
-                # error = "ERROR"
-
-            # print('test['+str(i)+']', '\tpredicted label is', pred, '\ttrue label is', y_test[i], error)
-            # i += 1
-            # error = ""
-
-        # acc = ((n_rows - total_error) / n_rows) * 100
         elapsed_time = time.process_time() - t
-        print('\tFor ',neighbours, 'neighbours:')
-        print('\tTime elapsed:', elapsed_time)
-        # print('\toverall accuracy:', str(round(acc, 2))+'%')
-        # print('\tnumber of errors:', total_error, 'out of', n_rows)
-        print(len(predictions))
+
+        #print('\tFor ',self.n_neighbors, 'neighbours:')
+        #print('\tTime elapsed:', elapsed_time)
         return predictions
+
+        
+    def accuracy_score(self, pred, target):
+        """
+        :param pred: list of predictions
+        :param target: list of targets
+        :returns: accuracy score 
+        """
+        assert len(pred) == len(target), "arguments must be of same length"
+
+        incorrect, correct = 0, 0
+
+        for predicted, actual in zip(pred, target):
+            if predicted != actual: 
+                incorrect += 1
+            else:
+                correct += 1
+            #print(f"predicted: {predicted}, actual: {actual}, correct: {correct}, incorrect:{incorrect}")
+
+        return correct / (correct + incorrect)
