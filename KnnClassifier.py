@@ -33,10 +33,12 @@ class KnnClassifier:
 
         return self.accuracy_score(predictions, targets) 
 
-    def predict(self, X):
+    def predict(self, X, distance_function=euclidean_distance):
         """
         :param X: matrix of features
+        :param distance_function: function to evaluate distance (euclidian, minkowski)
         :returns: predictions in list
+
         """
         predictions = []
         t = time.process_time()
@@ -45,7 +47,7 @@ class KnnClassifier:
             return max(set(labels), key=labels.count) # returns the mode / most common label
 
         for test_digit in X:
-            distances = [(euclidean_distance(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
+            distances = [(distance_function(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
             k_labels = [label for (_, label) in sorted_distances[:self.n_neighbors]]
             predictions.append(find_label(k_labels))

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from collections import defaultdict
-from metrics import euclidean_distance, accuracy_score
+from metrics import euclidean_distance
 from KnnClassifier import KnnClassifier
 from tqdm import tqdm
 

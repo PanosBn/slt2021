@@ -6,3 +6,4 @@ bin/
 lib/
 *.cfg
 data/MNIST_train.csv
+__pychache__/
