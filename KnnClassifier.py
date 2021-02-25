@@ -1,9 +1,13 @@
 import pandas as pandas
 import numpy as np
 from collections import defaultdict
+from tqdm.contrib.concurrent import process_map, cpu_count
 import time
-from metrics import euclidean_distance
+import multiprocessing
+from metrics import euclidean_distance,minkowski_distance
+from functools import partial
 
+num_cores = multiprocessing.cpu_count()
 class KnnClassifier:
     def __init__(self, n_neighbors=5):
         self.n_neighbors = n_neighbors
@@ -11,6 +15,30 @@ class KnnClassifier:
     def fit(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
+
+    def looc_validate_parallel(self, X, y):
+        #implementing tqdm concurrent paradigm using functools partial
+        looc_partial = partial(self.looc_single, X=X, y=y)
+        results = process_map(looc_partial, range(len(X)), max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        predictions, targets = zip(*results)
+
+        return self.accuracy_score(predictions, targets)
+        
+
+    def looc_single(self, index, X, y):
+
+        self.x_train = X
+        self.y_train = y
+        np.delete(self.x_train, index)
+        np.delete(self.y_train, index)
+
+        pred = self.predict_single(X[index])
+        # print("PRINTING PREDICTION: ", pred)
+        target = y[index]
+        # print("printing Target Label: ", target)
+
+        return pred, target
+
 
     def looc_validate(self, X, y):
         """
@@ -38,7 +66,6 @@ class KnnClassifier:
         :param X: matrix of features
         :param distance_function: function to evaluate distance (euclidian, minkowski)
         :returns: predictions in list
-
         """
         predictions = []
         t = time.process_time()
@@ -58,6 +85,25 @@ class KnnClassifier:
         #print('\tTime elapsed:', elapsed_time)
         return predictions
 
+    def predict_parallel(self,X, distance_function=euclidean_distance):
+        predict_partial = partial(self.predict_single)
+        results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        print(results)
+        # predictions, targets = zip(*results)
+
+        return results
+
+    def predict_single(self, test_digit, distance_function=euclidean_distance):
+
+        def find_label(labels):
+            return max(set(labels), key=labels.count) # returns the mode / most common label
+
+        distances = [(distance_function(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
+        sorted_distances = sorted(distances, key=lambda distance: distance[0])
+        k_labels = [label for (_, label) in sorted_distances[:self.n_neighbors]]
+        prediction = (find_label(k_labels))
+
+        return prediction
         
     def accuracy_score(self, pred, target):
         """

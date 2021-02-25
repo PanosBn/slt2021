@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from datetime import datetime 
 from collections import defaultdict
-from metrics import euclidean_distance
+from metrics import euclidean_distance, minkowski_distance
 from KnnClassifier import KnnClassifier
 from tqdm import tqdm
 
@@ -63,24 +64,43 @@ def main():
 
     ll = 11 
     # loop over number of neighbors
+    start_time = datetime.now() 
     for k in tqdm(range(1,ll)):
         clf = KnnClassifier(n_neighbors=k)
         clf.fit(x_train, y_train)
 
-        # normal
-        accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
-        accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
-        test_predictions.append(accuracy_test)
-        train_predictions.append(accuracy_train)
+        # # normal
+        # accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
+        # accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
+        # test_predictions.append(accuracy_test)
+        # train_predictions.append(accuracy_train)
+
+        # normal parallel
+        # accuracy_test = clf.accuracy_score(clf.predict_parallel(x_test), y_test)
+        # accuracy_train = clf.accuracy_score(clf.predict_parallel(x_train), y_train)
+        # test_predictions.append(accuracy_test)
+        # train_predictions.append(accuracy_train)
 
         # looc
-        looc_accuracy_train = clf.looc_validate(x_train, y_train)
-        looc_accuracy_test = clf.looc_validate(x_test, y_test)
+        # looc_accuracy_train = clf.looc_validate(x_train, y_train)
+        # looc_accuracy_test = clf.looc_validate(x_test, y_test)
+        # looc_test_predictions.append(looc_accuracy_test)
+        # looc_train_predictions.append(looc_accuracy_train)
+
+        # looc parallel
+        looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
+        looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
         looc_test_predictions.append(looc_accuracy_test)
         looc_train_predictions.append(looc_accuracy_train)
 
+    time_elapsed = datetime.now() - start_time 
+
+    print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+    
+
+
     # plot graphs train vs test score vs n neighbors
-    plot_q3(train_predictions, test_predictions, ll-1)
+    # plot_q3(train_predictions, test_predictions, ll-1)
     plot_q3(looc_train_predictions, looc_test_predictions, ll-1)
 
     
