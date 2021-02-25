@@ -4,38 +4,73 @@ import matplotlib.pyplot as plt
 import math
 from datetime import datetime 
 from collections import defaultdict
-from metrics import euclidean_distance, minkowski_distance
+import metrics
 from KnnClassifier import KnnClassifier
 from tqdm import tqdm
 
 
-def plot_q3(y_train_predictions, y_test_predictions, l):
-    x_range = np.linspace(1, l, num=l)
+def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
+    x_range = np.linspace(1, max_k, num=max_k)
     fig = plt.figure()
     fig.set_figwidth(15)
-    ax1 = fig.add_subplot(1, 2, 1)
-    # ax2 = fig.add_subplot(1, 2, 2)
-    ax1.plot(x_range, y_train_predictions, label='Training set', marker='.')
-    ax1.plot(x_range, y_test_predictions, label='Test set', marker='.')
+    
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(x_range, y_train_basic, label='Training set, basic', marker='.')
+    ax1.plot(x_range, y_test_basic, label='Test set, basic', marker='.')
+    ax1.plot(x_range, y_train_loocv, label='Training set, LOOC', marker='.')
+    ax1.plot(x_range, y_test_loocv, label='Test set, LOOC', marker='.')
     ax1.set_xlabel("Number of neighbours")
     ax1.set_ylabel("Accuracy (%))")
-    ax1.set_title("Accuracy")
+    ax1.set_title("Accuracy basic vs. LOOC")
     ax1.legend()
-    
-    # ax2.plot(x_range, grd_performance, label='Gradient Descent')
-    # ax2.plot(x_range, quad_performance, label='Quadratic')
-    # ax2.set_xlabel("Dataset size (%)")
-    # ax2.set_ylabel("Testing accuracy (%)")
-    # ax2.set_title("Testing Accuracy")
-    # ax2.legend()
+
     plt.show()
+    print("test")
+
+def plot_kp(train, test, max_k):
+    x_range = np.linspace(1, max_k, num=max_k)
+    fig = plt.figure()
+    fig.set_figwidth(15)
+    fig.set_figheight(20)
+    _, ncol = train.shape
+    axs = {}
+
+    for i in range(0, ncol):
+        axs[i] = fig.add_subplot(5, 3, i+1)
+        
+        axs[i].plot(x_range, train[:,i], label=f'Training set p = {i+1}', marker='.')
+        axs[i].plot(x_range, test[:,i], label=f'Test set p = {i+1}', marker='.')
+
+        axs[i].set_xlabel("Number of neighbours")
+        axs[i].set_ylabel("Accuracy (%))")
+        axs[i].set_title("Accuracy using k, p")
+        axs[i].legend()
+        
+    plt.show()
+
+def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
+    kp_test_predictions = np.zeros((max_k, max_p))
+    kp_train_predictions = np.zeros((max_k, max_p))
+
+    for k in tqdm(range(1,max_k+1)):
+        for p in range(1, max_p+1):
+            clf = KnnClassifier(n_neighbors=k)
+            clf.fit(x_train, y_train)
+
+            kp_accuracy_train = clf.looc_validate(x_train, y_train, metrics.minkowski_distance, p)
+            kp_accuracy_test = clf.looc_validate(x_test, y_test, metrics.minkowski_distance, p)
+            kp_train_predictions[k-1, p-1] = kp_accuracy_train
+            kp_test_predictions[k-1, p-1] = kp_accuracy_test
+
+    print(kp_train_predictions, "\n\n", kp_test_predictions)
+    plot_kp(kp_train_predictions, kp_test_predictions, max_k)
 
 
 def main():
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500)
-
+    nr_rows = 40
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=nr_rows)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=nr_rows)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -43,51 +78,36 @@ def main():
     x_test = test_small.values[:,1:]
     y_test = test_small.values[:,0]
     
+    # max number of neighbors
+    max_k = 4
 
-    # or pick smaller subsets of the dataset:
-    #x_train = train.values[:2900,1:]
-    #y_train = train.values[:2900,0]
+    # max degree for minkowski distance
+    max_p = 4
 
-    # clf = KnnClassifier(x_train,y_train,5).predict(x_test,y_test)
-    # k = 5
-    '''
-    y_train_predictions_set = []
-    y_test_predictions_set= []
-    y_test_prediction_set_errors = []
-    y_train_predictions_set_errors= []
-    y_train_loss = 0
-    y_test_loss = 0
-    
-    '''
+    # plot graphs for question C
+    compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p)
+
     test_predictions, train_predictions = [], []
     looc_test_predictions, looc_train_predictions = [], []
 
-    ll = 11 
     # loop over number of neighbors
     start_time = datetime.now() 
-    for k in tqdm(range(1,ll)):
+    for k in tqdm(range(1,max_k+1)):
         clf = KnnClassifier(n_neighbors=k)
         clf.fit(x_train, y_train)
 
-        # # normal
-        # accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
-        # accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
-        # test_predictions.append(accuracy_test)
-        # train_predictions.append(accuracy_train)
+        # normal
+        accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
+        accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
+        train_predictions.append(accuracy_train)
+        test_predictions.append(accuracy_test)
 
-        # normal parallel
-        # accuracy_test = clf.accuracy_score(clf.predict_parallel(x_test), y_test)
-        # accuracy_train = clf.accuracy_score(clf.predict_parallel(x_train), y_train)
-        # test_predictions.append(accuracy_test)
-        # train_predictions.append(accuracy_train)
-
-        # looc
+        # # looc
         # looc_accuracy_train = clf.looc_validate(x_train, y_train)
         # looc_accuracy_test = clf.looc_validate(x_test, y_test)
-        # looc_test_predictions.append(looc_accuracy_test)
         # looc_train_predictions.append(looc_accuracy_train)
+        # looc_test_predictions.append(looc_accuracy_test)
 
-        # looc parallel
         looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
         looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
         looc_test_predictions.append(looc_accuracy_test)
@@ -96,49 +116,10 @@ def main():
     time_elapsed = datetime.now() - start_time 
 
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-    
-
+    print(looc_train_predictions)
 
     # plot graphs train vs test score vs n neighbors
-    # plot_q3(train_predictions, test_predictions, ll-1)
-    plot_q3(looc_train_predictions, looc_test_predictions, ll-1)
-
-    
-
-
-    # y_train_predictions_set = y_train_predictions_set.sort()
-
-    # y_test_predictions_set = y_test_predictions_set.sort()
-    # df_result = pd.DataFrame()
-    # df_result['K value'] = [1,2,3]
-    # df_result['train pred'] = y_train_predictions_set
-    # df_result['test pred'] = y_test_predictions_set
-    # print(df_result)
-
-    # print(len(y_train_predictions))
-    # # print(type(y_train[:10]))
-    # print(type(y_train_predictions))
-    # train_accuracy = accuracy_score(y_train[:10], y_test_predictions[:10])
-    # print("Train accuracy: ", train_accuracy)
-    # print(y_train[:10])
-    # print(y_train_predictions)
-    
-    # classes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-
-    # # # plot 5 random sets of 0 - 9 digits in 5 subplots and add in one big plot
-    # # for y, cls in enumerate(classes):
-    # #     idxs = np.nonzero([i == y for i in y_train])
-    # #     idxs = np.random.choice(idxs[0], 5)
-    # #     for i , idx in enumerate(idxs):
-    # #         plt_idx = i * len(classes) + y + 1
-    # #         plt.subplot(5, len(classes), plt_idx)
-    # #         plt.imshow(x_train[idx].reshape((28, 28)))
-    # #         plt.axis("off")
-    # #         if i == 0:
-    # #             plt.title(cls)
-    
-    # # #plt.show()
-
+    plot_accuracy(train_predictions, test_predictions, looc_train_predictions, looc_test_predictions, max_k)
 
 if __name__ == "__main__":
     main()
