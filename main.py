@@ -19,8 +19,8 @@ def plot_q3(y_train_predictions, y_test_predictions, l):
     ax1.plot(x_range, y_train_predictions, label='Normal set', marker='.')
     ax1.plot(x_range, y_test_predictions, label='PCA set', marker='.')
     ax1.set_xlabel("Number of neighbours")
-    ax1.set_ylabel("Accuracy (%))")
-    ax1.set_title("Accuracy")
+    ax1.set_ylabel("Loss")
+    ax1.set_title("Training and test loss")
     ax1.legend()
     
     # ax2.plot(x_range, grd_performance, label='Gradient Descent')
@@ -59,7 +59,7 @@ def pca_q(X, y):
     train_predictions, train_predictions_pca, test_predictions_pca = [], [], []
 
     start_time = datetime.now() 
-    ll = 11
+    ll = 6
     for k in tqdm(range(1,ll)):
         print("\t Started PCA testing for ", k , " neighbours")
         clf = KnnClassifier(n_neighbors=k)
@@ -97,21 +97,6 @@ def main():
 
     pca_q(x_train,y_train)
 
-    # or pick smaller subsets of the dataset:
-    #x_train = train.values[:2900,1:]
-    #y_train = train.values[:2900,0]
-
-    # clf = KnnClassifier(x_train,y_train,5).predict(x_test,y_test)
-    # k = 5
-    '''
-    y_train_predictions_set = []
-    y_test_predictions_set= []
-    y_test_prediction_set_errors = []
-    y_train_predictions_set_errors= []
-    y_train_loss = 0
-    y_test_loss = 0
-    
-    '''
     test_predictions, train_predictions = [], []
     looc_test_predictions, looc_train_predictions = [], []
 

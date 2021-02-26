@@ -114,13 +114,15 @@ class KnnClassifier:
 
         assert len(pred) == len(target), "arguments must be of same length"
 
-        incorrect, correct = 0, 0
+        return np.mean(1-np.equal(pred, target, dtype=int))
 
-        for predicted, actual in zip(pred, target):
-            if predicted != actual: 
-                incorrect += 1
-            else:
-                correct += 1
-            #print(f"predicted: {predicted}, actual: {actual}, correct: {correct}, incorrect:{incorrect}")
+        # incorrect, correct = 0, 0
 
-        return correct / (correct + incorrect)
+        # for predicted, actual in zip(pred, target):
+        #     if predicted != actual: 
+        #         incorrect += 1
+        #     else:
+        #         correct += 1
+        #     #print(f"predicted: {predicted}, actual: {actual}, correct: {correct}, incorrect:{incorrect}")
+
+        # return correct / (correct + incorrect)
