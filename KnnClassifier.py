@@ -19,7 +19,7 @@ class KnnClassifier:
     def looc_validate_parallel(self, X, y):
         #implementing tqdm concurrent paradigm using functools partial
         looc_partial = partial(self.looc_single, X=X, y=y)
-        results = process_map(looc_partial, range(len(X)), max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        results = process_map(looc_partial, range(len(X)), max_workers=num_cores, chunksize=max(50, int(len(X)/num_cores*2)))
         predictions, targets = zip(*results)
 
         return self.accuracy_score(predictions, targets)
@@ -111,6 +111,7 @@ class KnnClassifier:
         :param target: list of targets
         :returns: accuracy score 
         """
+
         assert len(pred) == len(target), "arguments must be of same length"
 
         incorrect, correct = 0, 0
