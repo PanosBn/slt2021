@@ -65,7 +65,7 @@ class KdTree(list):
 
             dimension += 1 # to further divide
 
-            if(dimension >= self.dimension - 1): # base case so here we could have multiple children/leaves
+            if(dimension >= self.dimensions - 1): # base case so here we could have multiple children/leaves
                 median_node.left_children = nodes # ???this is the parent
             else: # recursive case
                 if nodes_left: # if not empty
@@ -76,8 +76,7 @@ class KdTree(list):
         build_tree(init_nodes, 0) # initial call
 
 
-
-    def search(self, search_X, distance_func=euclidean_distance, n_neighbors=5):
+    def search(self, search_X, distance_func=euclidean_distance, n_neighbors=5, self_included=False):
         """
         in this function we calculate the distance between the search_X and each node we pass
         we then check if our search_X at a dimension is greater or smaller than the node we are at
@@ -116,7 +115,18 @@ class KdTree(list):
                     search_recursion(*children, search_X, dimension) # unpack children as it is a list of one child
         
         search_recursion(self.root, search_X, 0)
-        return sorted(distances_labels, key=lambda x:x[0])[:n_neighbors + 1] # sort on distance
+
+        if self_included:
+            # if the node itself is in the tree, we must not include it in the answer
+            labels = sorted(distances_labels, key=lambda x:x[0])[1:n_neighbors + 1] # sort on distance
+        else:
+            labels = sorted(distances_labels, key=lambda x:x[0])[:n_neighbors]
+
+        print(labels)
+        labels = [x[1] for x in labels]
+        label = max(set(labels), key=labels.count)
+        return label
+
     
     def __str__(self):
         return f"tree of length {len(self.nodes)}"

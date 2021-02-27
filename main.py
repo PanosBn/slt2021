@@ -7,6 +7,9 @@ from collections import defaultdict
 from metrics import euclidean_distance, minkowski_distance
 from KnnClassifier import KnnClassifier
 from tqdm import tqdm
+import sys
+import time
+
 
 
 def plot_q3(y_train_predictions, y_test_predictions, l):
@@ -32,9 +35,11 @@ def plot_q3(y_train_predictions, y_test_predictions, l):
 
 
 def main():
+    sys.setrecursionlimit(10000)
+
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500, header=None)
 
     
     # split both datasets to digits and labels (the first item in every row is a label):
@@ -61,6 +66,10 @@ def main():
     '''
     test_predictions, train_predictions = [], []
     looc_test_predictions, looc_train_predictions = [], []
+    tree_test_predictions, tree_train_predictions = [], []
+    tree_single_score, tree_parallel_score, looc_parallel_score  = [], [], []
+    tree_single_time, tree_parallel_time, looc_parallel_time  = [], [], []
+
 
     ll = 11 
     # loop over number of neighbors
@@ -87,11 +96,37 @@ def main():
         # looc_test_predictions.append(looc_accuracy_test)
         # looc_train_predictions.append(looc_accuracy_train)
 
-        # looc parallel
-        looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
-        looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
-        looc_test_predictions.append(looc_accuracy_test)
-        looc_train_predictions.append(looc_accuracy_train)
+        # looc parallel tree
+        """
+        t = time.time()
+        tree_single_score.append(clf.looc_single_kdtree(x_train, y_train))
+        tree_single_time.append(time.time() - t)
+        """
+        t = time.time()
+        tree_parallel_score.append(clf.looc_parallel_kdtree(x_train, y_train))
+        tree_parallel_time.append(time.time() - t)
+        """
+        t = time.time()
+        looc_parallel_score.append(clf.looc_validate_parallel(x_train, y_train))
+        looc_parallel_time.append(time.time() - t)
+        """
+    fig, axs = plt.subplots(2)
+    axs[0].set_title("score vs neighbors")
+    #axs[0].plot(range(1,ll), looc_parallel_score, label="parallel")
+    axs[0].plot(range(1,ll), tree_parallel_score, label="parallel tree")
+    #axs[0].plot(range(1,ll), tree_single_score, label="single tree", linestyle="-.")
+    axs[0].set_xlabel("neighbors")
+    axs[0].set_ylabel("score")
+    axs[0].legend()
+
+    axs[1].set_title("time vs neighbors")
+    axs[1].set_xlabel("neighbors")
+    axs[1].set_ylabel("time")
+    #axs[1].plot(range(1,ll), looc_parallel_time, label="parallel")
+    axs[1].plot(range(1,ll), tree_parallel_time, label="parallel tree")
+    #axs[1].plot(range(1,ll), tree_single_time, label="single tree", linestyle="-.")
+    axs[1].legend()
+    plt.show()
 
     time_elapsed = datetime.now() - start_time 
 
@@ -101,7 +136,7 @@ def main():
 
     # plot graphs train vs test score vs n neighbors
     # plot_q3(train_predictions, test_predictions, ll-1)
-    plot_q3(looc_train_predictions, looc_test_predictions, ll-1)
+    plot_q3(tree_train_predictions, tree_test_predictions, ll-1)
 
     
 
