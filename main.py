@@ -57,8 +57,8 @@ def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
             clf = KnnClassifier(n_neighbors=k)
             clf.fit(x_train, y_train)
 
-            kp_accuracy_train = clf.looc_validate(x_train, y_train, metrics.minkowski_distance, p)
-            kp_accuracy_test = clf.looc_validate(x_test, y_test, metrics.minkowski_distance, p)
+            kp_accuracy_train = clf.looc_validate_parallel(x_train, y_train, metrics.minkowski_distance, p)
+            kp_accuracy_test = clf.looc_validate_parallel(x_test, y_test, metrics.minkowski_distance, p)
             kp_train_predictions[k-1, p-1] = kp_accuracy_train
             kp_test_predictions[k-1, p-1] = kp_accuracy_test
 
