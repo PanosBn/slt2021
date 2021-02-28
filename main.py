@@ -38,7 +38,7 @@ def main():
     sys.setrecursionlimit(10000)
 
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=1000, header=None)
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500, header=None)
 
     
@@ -69,6 +69,85 @@ def main():
     tree_test_predictions, tree_train_predictions = [], []
     tree_single_score, tree_parallel_score, looc_parallel_score  = [], [], []
     tree_single_time, tree_parallel_time, looc_parallel_time  = [], [], []
+    
+    def plot_trainspeed(X, y):
+        tree_single_score, tree_parallel_score, looc_parallel_score, looc_single_score  = [], [], [], []
+        tree_single_time, tree_parallel_time, looc_parallel_time, looc_single_time  = [], [], [], []
+        size = 110
+
+        # looc with classic NN single processing
+        print("scoring looc with classic NN single processing...")
+        for i in tqdm(range(10, size, 10)):
+            X_ = X[:round(len(X)*0.01*size)]
+            y_ = y[:round(len(y)*0.01*size)]
+            clf = KnnClassifier(n_neighbors=1)
+            clf.fit(X_, y_)
+            
+            t = time.time()
+            looc_single_score.append(clf.looc_single_kdtree(X_, y_))
+            looc_single_time.append(time.time() - t)
+        
+        # looc with classic NN multi processing
+        print("scoring looc with classic NN multi processing...")
+        for i in tqdm(range(10, size, 10)):
+            X_ = X[:round(len(X)*0.01*size)]
+            y_ = y[:round(len(y)*0.01*size)]
+            clf = KnnClassifier(n_neighbors=2)
+            clf.fit(X_, y_)
+
+            t = time.time()
+            looc_parallel_score.append(clf.looc_validate_parallel(X_, y_))
+            looc_parallel_time.append(time.time() - t)
+        
+        # looc with kd tree single processing
+        print("scoring looc with kd tree NN single processing...")
+        for i in tqdm(range(10, size, 10)):
+            X_ = X[:round(len(X)*0.01*size)]
+            y_ = y[:round(len(y)*0.01*size)]
+            clf = KnnClassifier(n_neighbors=1)
+            
+            t = time.time()
+            tree_single_score.append(clf.looc_single_kdtree(X_, y_))
+            tree_single_time.append(time.time() - t)
+
+        # looc with kd tree multi processing
+        print("scoring looc with kd tree NN multi processing...")
+        for i in tqdm(range(10, size, 10)):
+            X_ = X[:round(len(X)*0.01*size)]
+            y_ = y[:round(len(y)*0.01*size)]
+            clf = KnnClassifier(n_neighbors=1)        
+            
+            t = time.time()
+            tree_parallel_score.append(clf.looc_parallel_kdtree(X_, y_))
+            tree_parallel_time.append(time.time() - t)
+            
+        fig, axs = plt.subplots(2)
+        axs[0].set_title("score vs neighbors")
+        axs[0].plot(range(10, size, 10), looc_single_score, label="classic single", linestyle="-")
+        axs[0].plot(range(10, size, 10), looc_parallel_score, label="classic parallel", linestyle="-.")
+        axs[0].plot(range(10, size, 10), tree_single_score, label="tree single", linestyle="-")
+        axs[0].plot(range(10, size, 10), tree_parallel_score, label="tree parallel", linestyle="-.")
+        axs[0].set_xlabel("traindata set size in %")
+        axs[0].set_ylabel("score")
+        axs[0].set_xticks(range(10, size, 10))
+        axs[0].legend()
+
+        axs[1].set_title("time vs neighbors")
+        axs[1].set_xlabel("traindata set size in %")
+        axs[1].set_ylabel("time")
+        axs[1].plot(range(10, size, 10), looc_single_time, label="classic single", linestyle="-.")
+        axs[1].plot(range(10, size, 10), looc_parallel_time, label="classic parallel", linestyle="-.")
+        axs[1].plot(range(10, size, 10), tree_single_time, label="tree single", linestyle="-.")
+        axs[1].plot(range(10, size, 10), tree_parallel_time, label="tree parallel", linestyle="-.")
+        axs[1].set_xticks(range(10, size, 10))
+        axs[1].legend()
+
+        plt.tight_layout()
+        plt.show()
+
+
+    plot_trainspeed(x_train, y_train)
+
 
 
     ll = 11 

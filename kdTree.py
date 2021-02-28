@@ -122,7 +122,6 @@ class KdTree(list):
         else:
             labels = sorted(distances_labels, key=lambda x:x[0])[:n_neighbors]
 
-        print(labels)
         labels = [x[1] for x in labels]
         label = max(set(labels), key=labels.count)
         return label

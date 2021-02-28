@@ -59,8 +59,8 @@ class KnnClassifier:
 
         self.x_train = X
         self.y_train = y
-        np.delete(self.x_train, index)
-        np.delete(self.y_train, index)
+        self.x_train = np.delete(self.x_train, index)
+        self.y_train = np.delete(self.y_train, index)
 
         pred = self.predict_single(X[index])
         # print("PRINTING PREDICTION: ", pred)
@@ -82,8 +82,8 @@ class KnnClassifier:
             # effictively the same as fitting just minus one instance
             self.x_train = X
             self.y_train = y
-            np.delete(self.x_train, i)
-            np.delete(self.y_train, i)
+            self.x_train = np.delete(self.x_train, i)
+            self.y_train = np.delete(self.y_train, i)
 
             pred = self.predict([X[i]]) # has to take a list
             predictions.append(*pred) # returns a list therefore unpack with *
@@ -118,7 +118,7 @@ class KnnClassifier:
     def predict_parallel(self,X, distance_function=euclidean_distance):
         predict_partial = partial(self.predict_single)
         results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
-        print(results)
+        #print(results)
         # predictions, targets = zip(*results)
 
         return results
