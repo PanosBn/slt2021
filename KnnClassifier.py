@@ -1,20 +1,25 @@
 import pandas as pandas
 import numpy as np
 from collections import defaultdict
-from tqdm.contrib.concurrent import process_map, cpu_count
+from tqdm.contrib.concurrent import process_map, cpu_count, thread_map
 import time
 import multiprocessing
 from metrics import euclidean_distance,minkowski_distance
 from functools import partial
+from kdTree import KdTree
+from multiprocessing import Pool
 
 num_cores = multiprocessing.cpu_count()
 class KnnClassifier:
     def __init__(self, n_neighbors=5):
         self.n_neighbors = n_neighbors
+        self.tree = None
 
     def fit(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
+        self.tree = KdTree(self.x_train, self.y_train)
+
 
     def looc_validate_parallel(self, X, y):
         #implementing tqdm concurrent paradigm using functools partial
@@ -23,14 +28,39 @@ class KnnClassifier:
         predictions, targets = zip(*results)
 
         return self.accuracy_score(predictions, targets)
+
+    def looc_single_kdtree(self, X, y, tree=None):
+        predictions, targets = [], y
+        self.tree = KdTree(X, y)
+
+        for x in X:
+            pred = self.tree.search(x, n_neighbors=self.n_neighbors, self_included=True)
+            predictions.append(pred)
         
+        return self.accuracy_score(predictions, targets)
+
+    def looc_parallel_kdtree(self, X, y):
+        pool = Pool(maxtasksperchild=50, processes=num_cores-1)
+        self.tree = KdTree(X,y)
+        part = partial(self.tree.search, n_neighbors=self.n_neighbors, self_included=True)
+        predictions = process_map(part, X, max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        
+        return self.accuracy_score(predictions, y)
+        
+    def predict_kdtree(self, X, distance_function=euclidean_distance):
+        predictions = []
+        for x in X:
+            pred = self.tree.search(X, n_neighbors=self.n_neighbors)
+            predictions.append(pred)
+    
+        return predictions
 
     def looc_single(self, index, X, y):
 
         self.x_train = X
         self.y_train = y
-        np.delete(self.x_train, index)
-        np.delete(self.y_train, index)
+        self.x_train = np.delete(self.x_train, index)
+        self.y_train = np.delete(self.y_train, index)
 
         pred = self.predict_single(X[index])
         # print("PRINTING PREDICTION: ", pred)
@@ -52,8 +82,8 @@ class KnnClassifier:
             # effictively the same as fitting just minus one instance
             self.x_train = X
             self.y_train = y
-            np.delete(self.x_train, i)
-            np.delete(self.y_train, i)
+            self.x_train = np.delete(self.x_train, i)
+            self.y_train = np.delete(self.y_train, i)
 
             pred = self.predict([X[i]]) # has to take a list
             predictions.append(*pred) # returns a list therefore unpack with *
@@ -88,7 +118,7 @@ class KnnClassifier:
     def predict_parallel(self,X, distance_function=euclidean_distance):
         predict_partial = partial(self.predict_single)
         results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
-        print(results)
+        #print(results)
         # predictions, targets = zip(*results)
 
         return results
