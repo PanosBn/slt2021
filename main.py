@@ -38,7 +38,7 @@ def main():
     sys.setrecursionlimit(10000)
 
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=1000, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=500, header=None)
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500, header=None)
 
     
@@ -47,7 +47,22 @@ def main():
     y_train = train_small.values[:,0]
     x_test = test_small.values[:,1:]
     y_test = test_small.values[:,0]
-    
+
+    #try-out wies
+    def find_kp(X, y, distance_function=minkowski_distance):
+        """
+        Loops over k and p and computes the accuracy 
+        for the combinations of k, p values. 
+        """
+        stats = []
+        for k in range(0,15):
+            for p in range(0,10):
+                clf = KnnClassifier(n_neighbors=k)
+                clf.fit(X, y)
+
+                stats.append(k, p, clf.looc_validate(X, y, distance_function=minkowski_distance))
+        return stats
+    print(find_kp(x_train, y_train))
 
     # or pick smaller subsets of the dataset:
     #x_train = train.values[:2900,1:]

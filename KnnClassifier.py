@@ -21,7 +21,7 @@ class KnnClassifier:
         self.tree = KdTree(self.x_train, self.y_train)
 
 
-    def looc_validate_parallel(self, X, y):
+    def looc_validate_parallel(self, X, y, distance_function=euclidean_distance):
         #implementing tqdm concurrent paradigm using functools partial
         looc_partial = partial(self.looc_single, X=X, y=y)
         results = process_map(looc_partial, range(len(X)), max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
@@ -29,7 +29,7 @@ class KnnClassifier:
 
         return self.accuracy_score(predictions, targets)
 
-    def looc_single_kdtree(self, X, y, tree=None):
+    def looc_single_kdtree(self, X, y, tree=None, distance_function=euclidean_distance):
         predictions, targets = [], y
         self.tree = KdTree(X, y)
 
@@ -39,7 +39,7 @@ class KnnClassifier:
         
         return self.accuracy_score(predictions, targets)
 
-    def looc_parallel_kdtree(self, X, y):
+    def looc_parallel_kdtree(self, X, y, distance_function=euclidean_distance):
         pool = Pool(maxtasksperchild=50, processes=num_cores-1)
         self.tree = KdTree(X,y)
         part = partial(self.tree.search, n_neighbors=self.n_neighbors, self_included=True)
@@ -55,7 +55,7 @@ class KnnClassifier:
     
         return predictions
 
-    def looc_single(self, index, X, y):
+    def looc_single(self, index, X, y, distance_function=euclidean_distance):
 
         self.x_train = X
         self.y_train = y
@@ -70,7 +70,7 @@ class KnnClassifier:
         return pred, target
 
 
-    def looc_validate(self, X, y):
+    def looc_validate(self, X, y, distance_function=euclidean_distance):
         """
         :param X: matrix of features
         :param y: target label
@@ -85,11 +85,25 @@ class KnnClassifier:
             self.x_train = np.delete(self.x_train, i)
             self.y_train = np.delete(self.y_train, i)
 
-            pred = self.predict([X[i]]) # has to take a list
+            pred = self.predict([X[i]], distance_function=euclidean_distance) # has to take a list
             predictions.append(*pred) # returns a list therefore unpack with *
             targets.append(y[i])        
 
         return self.accuracy_score(predictions, targets) 
+
+    def find_kp(self, X, y, distance_function=minkowski_distance):
+        """
+        Loops over k and p and computes the accuracy 
+        for the combinations of k, p values. 
+        """
+        stats = []
+        for k in range(0,15):
+            for p in range(0,10):
+                clf = KnnClassifier(n_neighbors=k)
+                clf.fit(X, y)
+
+                stats.append(k, p, clf.looc_validate(X, y, disance_function=minkowski_distance))
+        return stats
 
     def predict(self, X, distance_function=euclidean_distance):
         """
