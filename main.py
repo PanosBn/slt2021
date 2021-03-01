@@ -9,38 +9,89 @@ from KnnClassifier import KnnClassifier
 from tqdm import tqdm
 import sys
 import time
+from functools import partial
 
 
-
-def plot_q3(y_train_predictions, y_test_predictions, l):
-    x_range = np.linspace(1, l, num=l)
+def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
+    x_range = np.linspace(1, max_k, num=max_k)
     fig = plt.figure()
     fig.set_figwidth(15)
-    ax1 = fig.add_subplot(1, 2, 1)
-    # ax2 = fig.add_subplot(1, 2, 2)
-    ax1.plot(x_range, y_train_predictions, label='Training set', marker='.')
-    ax1.plot(x_range, y_test_predictions, label='Test set', marker='.')
+    
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(x_range, y_train_basic, label='Training set, basic', marker='.')
+    ax1.plot(x_range, y_test_basic, label='Test set, basic', marker='.')
+    ax1.plot(x_range, y_train_loocv, label='Training set, LOOC', marker='.')
+    ax1.plot(x_range, y_test_loocv, label='Test set, LOOC', marker='.')
     ax1.set_xlabel("Number of neighbours")
     ax1.set_ylabel("Accuracy (%))")
-    ax1.set_title("Accuracy")
+    ax1.set_title("Accuracy basic vs. LOOC")
     ax1.legend()
-    
-    # ax2.plot(x_range, grd_performance, label='Gradient Descent')
-    # ax2.plot(x_range, quad_performance, label='Quadratic')
-    # ax2.set_xlabel("Dataset size (%)")
-    # ax2.set_ylabel("Testing accuracy (%)")
-    # ax2.set_title("Testing Accuracy")
-    # ax2.legend()
+
+    plt.show()
+    print("test")
+
+def plot_kp(train, test, max_k):
+    x_range = np.linspace(1, max_k, num=max_k)
+    fig = plt.figure()
+    fig.set_figwidth(15)
+    fig.set_figheight(20)
+    _, ncol = train.shape
+    axs = {}
+
+    for i in range(0, ncol):
+        axs[i] = fig.add_subplot(5, 3, i+1)
+        
+        axs[i].plot(x_range, train[:,i], label=f'Training set p = {i+1}', marker='.')
+        axs[i].plot(x_range, test[:,i], label=f'Test set p = {i+1}', marker='.')
+
+        axs[i].set_xlabel("Number of neighbours")
+        axs[i].set_ylabel("Accuracy (%))")
+        axs[i].set_title("Accuracy using k, p")
+        axs[i].legend()
+        
     plt.show()
 
+def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
+    kp_test_predictions = np.zeros((max_k, max_p))
+    kp_train_predictions = np.zeros((max_k, max_p))
+
+    for k in tqdm(range(1,max_k+1)):
+        for p in range(1, max_p+1):
+            clf = KnnClassifier(n_neighbors=k)
+            clf.fit(x_train, y_train)
+
+            kp_accuracy_train = clf.looc_validate_parallel(x_train, y_train, minkowski_distance, p)
+            kp_accuracy_test = clf.looc_validate_parallel(x_test, y_test, minkowski_distance, p)
+            kp_train_predictions[k-1, p-1] = kp_accuracy_train
+            kp_test_predictions[k-1, p-1] = kp_accuracy_test
+
+    print(kp_train_predictions, "\n\n", kp_test_predictions)
+    plot_kp(kp_train_predictions, kp_test_predictions, max_k)
+
+def test(X, y):
+    p_max = 5
+    k_max = 20
+    pk = []
+    for p in range(1, p_max + 1):
+        minowski = partial(minkowski_distance, p=p)
+
+        clf = KnnClassifier(distance_function=minowski)
+        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+        loss = []
+        
+        for k in range(1, k_max + 1):
+            loss.append(clf.loss_score(labels, y, n_neighbors=k)) 
+        pk.append(loss)
+
+    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
+    return pk     
 
 def main():
     sys.setrecursionlimit(10000)
-
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=1000, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500, header=None)
-
+    nr_rows = 500
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=nr_rows)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=nr_rows)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -49,209 +100,46 @@ def main():
     y_test = test_small.values[:,0]
     
 
-    # or pick smaller subsets of the dataset:
-    #x_train = train.values[:2900,1:]
-    #y_train = train.values[:2900,0]
 
-    # clf = KnnClassifier(x_train,y_train,5).predict(x_test,y_test)
-    # k = 5
-    '''
-    y_train_predictions_set = []
-    y_test_predictions_set= []
-    y_test_prediction_set_errors = []
-    y_train_predictions_set_errors= []
-    y_train_loss = 0
-    y_test_loss = 0
-    
-    '''
+    """
+    THIS IS AN EXAMPLE OF HOW THE CLASSIFIER SHOULD BE USED WITH THE NEW CHANGES, I HAVENT DEBUGGED ANY OF THE LINES BELOW 113
+    THIS MAKES IT A LOT MORE CLEAR INSIDE THE KNN CLASS AND WHEN CALLING THE FUNCTION
+    """
+    print(test(x_train, y_train))
+
+    # max number of neighbors
+    max_k = 4
+    # max degree for minkowski distance
+    max_p = 4
+    # plot graphs for question C
+    compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p)
+
     test_predictions, train_predictions = [], []
     looc_test_predictions, looc_train_predictions = [], []
-    tree_test_predictions, tree_train_predictions = [], []
-    tree_single_score, tree_parallel_score, looc_parallel_score  = [], [], []
-    tree_single_time, tree_parallel_time, looc_parallel_time  = [], [], []
-    
-    def plot_trainspeed(X, y):
-        tree_single_score, tree_parallel_score, looc_parallel_score, looc_single_score  = [], [], [], []
-        tree_single_time, tree_parallel_time, looc_parallel_time, looc_single_time  = [], [], [], []
-        size = 110
-
-        # looc with classic NN single processing
-        print("scoring looc with classic NN single processing...")
-        for i in tqdm(range(10, size, 10)):
-            X_ = X[:round(len(X)*0.01*size)]
-            y_ = y[:round(len(y)*0.01*size)]
-            clf = KnnClassifier(n_neighbors=1)
-            clf.fit(X_, y_)
-            
-            t = time.time()
-            looc_single_score.append(clf.looc_single_kdtree(X_, y_))
-            looc_single_time.append(time.time() - t)
-        
-        # looc with classic NN multi processing
-        print("scoring looc with classic NN multi processing...")
-        for i in tqdm(range(10, size, 10)):
-            X_ = X[:round(len(X)*0.01*size)]
-            y_ = y[:round(len(y)*0.01*size)]
-            clf = KnnClassifier(n_neighbors=2)
-            clf.fit(X_, y_)
-
-            t = time.time()
-            looc_parallel_score.append(clf.looc_validate_parallel(X_, y_))
-            looc_parallel_time.append(time.time() - t)
-        
-        # looc with kd tree single processing
-        print("scoring looc with kd tree NN single processing...")
-        for i in tqdm(range(10, size, 10)):
-            X_ = X[:round(len(X)*0.01*size)]
-            y_ = y[:round(len(y)*0.01*size)]
-            clf = KnnClassifier(n_neighbors=1)
-            
-            t = time.time()
-            tree_single_score.append(clf.looc_single_kdtree(X_, y_))
-            tree_single_time.append(time.time() - t)
-
-        # looc with kd tree multi processing
-        print("scoring looc with kd tree NN multi processing...")
-        for i in tqdm(range(10, size, 10)):
-            X_ = X[:round(len(X)*0.01*size)]
-            y_ = y[:round(len(y)*0.01*size)]
-            clf = KnnClassifier(n_neighbors=1)        
-            
-            t = time.time()
-            tree_parallel_score.append(clf.looc_parallel_kdtree(X_, y_))
-            tree_parallel_time.append(time.time() - t)
-            
-        fig, axs = plt.subplots(2)
-        axs[0].set_title("score vs neighbors")
-        axs[0].plot(range(10, size, 10), looc_single_score, label="classic single", linestyle="-")
-        axs[0].plot(range(10, size, 10), looc_parallel_score, label="classic parallel", linestyle="-.")
-        axs[0].plot(range(10, size, 10), tree_single_score, label="tree single", linestyle="-")
-        axs[0].plot(range(10, size, 10), tree_parallel_score, label="tree parallel", linestyle="-.")
-        axs[0].set_xlabel("traindata set size in %")
-        axs[0].set_ylabel("score")
-        axs[0].set_xticks(range(10, size, 10))
-        axs[0].legend()
-
-        axs[1].set_title("time vs neighbors")
-        axs[1].set_xlabel("traindata set size in %")
-        axs[1].set_ylabel("time")
-        axs[1].plot(range(10, size, 10), looc_single_time, label="classic single", linestyle="-.")
-        axs[1].plot(range(10, size, 10), looc_parallel_time, label="classic parallel", linestyle="-.")
-        axs[1].plot(range(10, size, 10), tree_single_time, label="tree single", linestyle="-.")
-        axs[1].plot(range(10, size, 10), tree_parallel_time, label="tree parallel", linestyle="-.")
-        axs[1].set_xticks(range(10, size, 10))
-        axs[1].legend()
-
-        plt.tight_layout()
-        plt.show()
-
-
-    plot_trainspeed(x_train, y_train)
-
-
-
-    ll = 11 
     # loop over number of neighbors
     start_time = datetime.now() 
-    for k in tqdm(range(1,ll)):
+    for k in tqdm(range(1,max_k+1)):
         clf = KnnClassifier(n_neighbors=k)
         clf.fit(x_train, y_train)
 
-        # # normal
-        # accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
-        # accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
-        # test_predictions.append(accuracy_test)
-        # train_predictions.append(accuracy_train)
+        # normal
+        accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
+        accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
+        train_predictions.append(accuracy_train)
+        test_predictions.append(accuracy_test)
 
-        # normal parallel
-        # accuracy_test = clf.accuracy_score(clf.predict_parallel(x_test), y_test)
-        # accuracy_train = clf.accuracy_score(clf.predict_parallel(x_train), y_train)
-        # test_predictions.append(accuracy_test)
-        # train_predictions.append(accuracy_train)
-
-        # looc
-        # looc_accuracy_train = clf.looc_validate(x_train, y_train)
-        # looc_accuracy_test = clf.looc_validate(x_test, y_test)
-        # looc_test_predictions.append(looc_accuracy_test)
-        # looc_train_predictions.append(looc_accuracy_train)
-
-        # looc parallel tree
-        """
-        t = time.time()
-        tree_single_score.append(clf.looc_single_kdtree(x_train, y_train))
-        tree_single_time.append(time.time() - t)
-        """
-        t = time.time()
-        tree_parallel_score.append(clf.looc_parallel_kdtree(x_train, y_train))
-        tree_parallel_time.append(time.time() - t)
-        """
-        t = time.time()
-        looc_parallel_score.append(clf.looc_validate_parallel(x_train, y_train))
-        looc_parallel_time.append(time.time() - t)
-        """
-    fig, axs = plt.subplots(2)
-    axs[0].set_title("score vs neighbors")
-    #axs[0].plot(range(1,ll), looc_parallel_score, label="parallel")
-    axs[0].plot(range(1,ll), tree_parallel_score, label="parallel tree")
-    #axs[0].plot(range(1,ll), tree_single_score, label="single tree", linestyle="-.")
-    axs[0].set_xlabel("neighbors")
-    axs[0].set_ylabel("score")
-    axs[0].legend()
-
-    axs[1].set_title("time vs neighbors")
-    axs[1].set_xlabel("neighbors")
-    axs[1].set_ylabel("time")
-    #axs[1].plot(range(1,ll), looc_parallel_time, label="parallel")
-    axs[1].plot(range(1,ll), tree_parallel_time, label="parallel tree")
-    #axs[1].plot(range(1,ll), tree_single_time, label="single tree", linestyle="-.")
-    axs[1].legend()
-    plt.show()
+        looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
+        looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
+        looc_test_predictions.append(looc_accuracy_test)
+        looc_train_predictions.append(looc_accuracy_train)
 
     time_elapsed = datetime.now() - start_time 
 
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-    
-
+    print(looc_train_predictions)
 
     # plot graphs train vs test score vs n neighbors
-    # plot_q3(train_predictions, test_predictions, ll-1)
-    plot_q3(tree_train_predictions, tree_test_predictions, ll-1)
-
-    
-
-
-    # y_train_predictions_set = y_train_predictions_set.sort()
-
-    # y_test_predictions_set = y_test_predictions_set.sort()
-    # df_result = pd.DataFrame()
-    # df_result['K value'] = [1,2,3]
-    # df_result['train pred'] = y_train_predictions_set
-    # df_result['test pred'] = y_test_predictions_set
-    # print(df_result)
-
-    # print(len(y_train_predictions))
-    # # print(type(y_train[:10]))
-    # print(type(y_train_predictions))
-    # train_accuracy = accuracy_score(y_train[:10], y_test_predictions[:10])
-    # print("Train accuracy: ", train_accuracy)
-    # print(y_train[:10])
-    # print(y_train_predictions)
-    
-    # classes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-
-    # # # plot 5 random sets of 0 - 9 digits in 5 subplots and add in one big plot
-    # # for y, cls in enumerate(classes):
-    # #     idxs = np.nonzero([i == y for i in y_train])
-    # #     idxs = np.random.choice(idxs[0], 5)
-    # #     for i , idx in enumerate(idxs):
-    # #         plt_idx = i * len(classes) + y + 1
-    # #         plt.subplot(5, len(classes), plt_idx)
-    # #         plt.imshow(x_train[idx].reshape((28, 28)))
-    # #         plt.axis("off")
-    # #         if i == 0:
-    # #             plt.title(cls)
-    
-    # # #plt.show()
+    plot_accuracy(train_predictions, test_predictions, looc_train_predictions, looc_test_predictions, max_k)
 
 
 if __name__ == "__main__":
