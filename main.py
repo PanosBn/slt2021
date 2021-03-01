@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import math
 from datetime import datetime 
 from collections import defaultdict
@@ -84,7 +85,15 @@ def test(X, y):
         pk.append(loss)
 
     pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
-    return pk     
+    return pk   
+
+def heat_pk(pk):
+    font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 14,}
+    ax = sns.heatmap(pk, square=False, cmap='BuPu')
+    plt.title("Loss for (k, p)", fontdict=font)
+    plt.xlabel('k', fontdict=font)
+    plt.ylabel('p', fontdict=font)
+    plt.show()
 
 def main():
     sys.setrecursionlimit(10000)
@@ -105,6 +114,9 @@ def main():
     THIS IS AN EXAMPLE OF HOW THE CLASSIFIER SHOULD BE USED WITH THE NEW CHANGES, I HAVENT DEBUGGED ANY OF THE LINES BELOW 113
     THIS MAKES IT A LOT MORE CLEAR INSIDE THE KNN CLASS AND WHEN CALLING THE FUNCTION
     """
+    pk = test(x_train, y_train)
+    print(pk)
+    heat_pk(pk)
     print(test(x_train, y_train))
 
     # max number of neighbors

@@ -98,7 +98,7 @@ class KnnClassifier:
         pred = [find_label(array[0:n_neighbors]) for array in pred]
 
 
-        loss = np.sum(pred != targets)
+        loss = np.sum((pred != targets)/len(pred))
 
         return loss
 
