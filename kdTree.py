@@ -76,7 +76,7 @@ class KdTree(list):
         build_tree(init_nodes, 0) # initial call
 
 
-    def search(self, search_X, distance_func=euclidean_distance, n_neighbors=5, self_included=False):
+    def search(self, search_X, distance_func=euclidean_distance):
         """
         in this function we calculate the distance between the search_X and each node we pass
         we then check if our search_X at a dimension is greater or smaller than the node we are at
@@ -116,15 +116,10 @@ class KdTree(list):
         
         search_recursion(self.root, search_X, 0)
 
-        if self_included:
-            # if the node itself is in the tree, we must not include it in the answer
-            labels = sorted(distances_labels, key=lambda x:x[0])[1:n_neighbors + 1] # sort on distance
-        else:
-            labels = sorted(distances_labels, key=lambda x:x[0])[:n_neighbors]
+        labels = sorted(distances_labels, key=lambda x:x[0])
 
-        labels = [x[1] for x in labels]
-        label = max(set(labels), key=labels.count)
-        return label
+        labels = [x[1] for x in labels if x[0] != 0.0] # so if it is not itself included
+        return labels
 
     
     def __str__(self):
