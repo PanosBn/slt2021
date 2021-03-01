@@ -70,7 +70,7 @@ def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
     plot_kp(kp_train_predictions, kp_test_predictions, max_k)
 
 def test(X, y):
-    p_max = 5
+    p_max = 15
     k_max = 20
     pk = []
     for p in range(1, p_max + 1):
@@ -88,11 +88,13 @@ def test(X, y):
     return pk   
 
 def heat_pk(pk):
-    font = {'family': 'serif', 'color': 'black', 'weight': 'normal', 'size': 14,}
-    ax = sns.heatmap(pk, square=False, cmap='BuPu')
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f')
     plt.title("Loss for (k, p)", fontdict=font)
     plt.xlabel('k', fontdict=font)
     plt.ylabel('p', fontdict=font)
+    ax.invert_yaxis()
+    #plt.axis([1, 20, 1, 15])
     plt.show()
 
 def main():
@@ -114,10 +116,11 @@ def main():
     THIS IS AN EXAMPLE OF HOW THE CLASSIFIER SHOULD BE USED WITH THE NEW CHANGES, I HAVENT DEBUGGED ANY OF THE LINES BELOW 113
     THIS MAKES IT A LOT MORE CLEAR INSIDE THE KNN CLASS AND WHEN CALLING THE FUNCTION
     """
+    start=time.time()
     pk = test(x_train, y_train)
     print(pk)
     heat_pk(pk)
-    print(test(x_train, y_train))
+    print(time.time()-start)
 
     # max number of neighbors
     max_k = 4
