@@ -69,6 +69,29 @@ def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
     print(kp_train_predictions, "\n\n", kp_test_predictions)
     plot_kp(kp_train_predictions, kp_test_predictions, max_k)
 
+def q_a(X, y, Xt, yt):
+    clf = KnnClassifier(distance_function=euclidean_distance)
+    clf.fit(X, y)
+    acc_train, acc_test = [], []
+    k_max = 20
+    labels_train = clf.predict(X, return_multiple=True)
+    labels_test = clf.predict(Xt, return_multiple=True)
+
+    for k in tqdm(range(1, k_max + 1)):
+        acc_train.append(clf.accuracy_score(labels_train, y, n_neighbors=k) * 100)
+        acc_test.append(clf.accuracy_score(labels_test, yt, n_neighbors=k) * 100) 
+    
+    plt.plot(range(1, k_max + 1), acc_train, label="train set")
+    plt.plot(range(1, k_max + 1), acc_test, label="test set")
+    plt.legend()
+    plt.title("Accuracy kNN compared to k neighbors")
+    plt.xticks(range(1, k_max + 1))
+    plt.xlabel("k neighbors")
+    plt.ylabel("Accuracy score in %")
+    plt.show()
+
+
+
 def test(X, y):
     p_max = 15
     k_max = 20
@@ -100,9 +123,8 @@ def heat_pk(pk):
 def main():
     sys.setrecursionlimit(10000)
     # initialize datasets from .csv files:
-    nr_rows = 500
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=nr_rows)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=nr_rows)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -116,6 +138,7 @@ def main():
     THIS IS AN EXAMPLE OF HOW THE CLASSIFIER SHOULD BE USED WITH THE NEW CHANGES, I HAVENT DEBUGGED ANY OF THE LINES BELOW 113
     THIS MAKES IT A LOT MORE CLEAR INSIDE THE KNN CLASS AND WHEN CALLING THE FUNCTION
     """
+    q_a(x_train, y_train, x_test, y_test)
     start=time.time()
     pk = test(x_train, y_train)
     print(pk)

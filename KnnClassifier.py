@@ -49,12 +49,12 @@ class KnnClassifier:
         if tree_search:
             pred = self.tree.search(X[index], distance_func=self.distance_function)
         else:
-            pred = self.predict(X[index], return_multiple=return_multiple, single_prediction=True)
+            pred = self.predict(X[index], return_multiple=return_multiple, single_prediction=True, self_included=True)
             pred = pred[0]
 
         return pred
 
-    def predict(self, X, max_labels=20, return_multiple=False, single_prediction=False):
+    def predict(self, X, max_labels=20, return_multiple=False, single_prediction=False, self_included=False):
         """
         :param X: matrix of features
         :param distance_function: function to evaluate distance (euclidian, minkowski)
@@ -68,7 +68,12 @@ class KnnClassifier:
         for test_digit in X:
             distances = [(self.distance_function(test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
             sorted_distances = sorted(distances, key=lambda distance: distance[0])
-            k_labels = [label for (distance, label) in sorted_distances[:max_labels] if distance != 0] # so if the test X is not included
+
+            if self_included:
+                k_labels = [label for (distance, label) in sorted_distances[1:max_labels+1]] # we exlcude itself (the closest) when looc is used
+            else:
+                k_labels = [label for (distance, label) in sorted_distances[:max_labels]] #
+
             predictions.append(k_labels)
 
 
@@ -117,7 +122,7 @@ class KnnClassifier:
         def find_label(labels):
             return max(set(labels), key=labels.count) # returns the mode / most common label
         
-        pred = [find_label(array[1:1 + n_neighbors]) for array in pred]
+        pred = [find_label(array[0:n_neighbors]) for array in pred]
 
         loss = np.mean(pred == targets)
 
