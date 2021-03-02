@@ -81,14 +81,25 @@ def q_a(X, y, Xt, yt):
         acc_train.append(clf.accuracy_score(labels_train, y, n_neighbors=k) * 100)
         acc_test.append(clf.accuracy_score(labels_test, yt, n_neighbors=k) * 100) 
     
-    plt.plot(range(1, k_max + 1), acc_train, label="train set")
-    plt.plot(range(1, k_max + 1), acc_test, label="test set")
-    plt.legend()
-    plt.title("Accuracy kNN compared to k neighbors")
-    plt.xticks(range(1, k_max + 1))
-    plt.xlabel("k neighbors")
-    plt.ylabel("Accuracy score in %")
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+
+    fg, (ax1,ax2) = plt.subplots(2, 1)
+    ax1.plot(range(1, k_max + 1), acc_train, label="train set")
+    ax1.plot(range(1, k_max + 1), acc_test, label="test set")
+    ax1.legend()
+    ax1.set_title("Accuracy kNN compared to k neighbors", fontdict=font)
+    ax1.set_xticks(range(1, k_max + 1))
+    ax1.set_xlabel("k neighbors")
+    ax1.set_ylabel("Accuracy score in %")
+
+    table = [acc_train, acc_test]
+
+    ax2 = sns.heatmap(table, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f', yticklabels=["train", "test"], xticklabels=range(1, k_max+1), cbar=False)
+
     plt.show()
+
+    
+
 
 
 
