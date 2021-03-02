@@ -100,7 +100,7 @@ def heat_pk(pk):
 def main():
     sys.setrecursionlimit(10000)
     # initialize datasets from .csv files:
-    nr_rows = 500
+    nr_rows = 1000
     train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=nr_rows)
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=nr_rows)
     
@@ -122,39 +122,39 @@ def main():
     heat_pk(pk)
     print(time.time()-start)
 
-    # max number of neighbors
-    max_k = 4
-    # max degree for minkowski distance
-    max_p = 4
-    # plot graphs for question C
-    compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p)
+    # # max number of neighbors
+    # max_k = 4
+    # # max degree for minkowski distance
+    # max_p = 4
+    # # plot graphs for question C
+    # compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p)
 
-    test_predictions, train_predictions = [], []
-    looc_test_predictions, looc_train_predictions = [], []
-    # loop over number of neighbors
-    start_time = datetime.now() 
-    for k in tqdm(range(1,max_k+1)):
-        clf = KnnClassifier(n_neighbors=k)
-        clf.fit(x_train, y_train)
+    # test_predictions, train_predictions = [], []
+    # looc_test_predictions, looc_train_predictions = [], []
+    # # loop over number of neighbors
+    # start_time = datetime.now() 
+    # for k in tqdm(range(1,max_k+1)):
+    #     clf = KnnClassifier(n_neighbors=k)
+    #     clf.fit(x_train, y_train)
 
-        # normal
-        accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
-        accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
-        train_predictions.append(accuracy_train)
-        test_predictions.append(accuracy_test)
+    #     # normal
+    #     accuracy_train = clf.accuracy_score(clf.predict(x_train), y_train)
+    #     accuracy_test = clf.accuracy_score(clf.predict(x_test), y_test)
+    #     train_predictions.append(accuracy_train)
+    #     test_predictions.append(accuracy_test)
 
-        looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
-        looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
-        looc_test_predictions.append(looc_accuracy_test)
-        looc_train_predictions.append(looc_accuracy_train)
+    #     looc_accuracy_train = clf.looc_validate_parallel(x_train, y_train)
+    #     looc_accuracy_test = clf.looc_validate_parallel(x_test, y_test)
+    #     looc_test_predictions.append(looc_accuracy_test)
+    #     looc_train_predictions.append(looc_accuracy_train)
 
-    time_elapsed = datetime.now() - start_time 
+    # time_elapsed = datetime.now() - start_time 
 
-    print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-    print(looc_train_predictions)
+    # print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+    # print(looc_train_predictions)
 
-    # plot graphs train vs test score vs n neighbors
-    plot_accuracy(train_predictions, test_predictions, looc_train_predictions, looc_test_predictions, max_k)
+    # # plot graphs train vs test score vs n neighbors
+    # plot_accuracy(train_predictions, test_predictions, looc_train_predictions, looc_test_predictions, max_k)
 
 
 if __name__ == "__main__":
