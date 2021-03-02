@@ -100,7 +100,7 @@ def heat_pk(pk):
 def main():
     sys.setrecursionlimit(10000)
     # initialize datasets from .csv files:
-    nr_rows = 1000
+    nr_rows = 500
     train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=nr_rows)
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=nr_rows)
     
