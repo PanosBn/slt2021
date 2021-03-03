@@ -18,7 +18,7 @@ def plot_q3(normal_test_predictions, pca_test_predictions, l):
     # ax2 = fig.add_subplot(1, 2, 2)
     ax1.plot(x_range, normal_test_predictions, label='Normal set', marker='.')
     ax1.plot(x_range, pca_test_predictions, label='PCA set', marker='.')
-    plt.ylim(50,100)
+    plt.ylim([70,100])
     ax1.set_xlabel("Number of neighbours")
     ax1.set_ylabel("Loss")
     ax1.set_title("Comparison between normalloss")
@@ -37,6 +37,7 @@ def plot_pca(normal_test_predictions,pca_test_predictions, params):
     fig = plt.figure()
     fig.set_figwidth(20)
     ax1 = fig.add_subplot(1,2,1)
+    plt.ylim([80,100])
     ax1.plot(params, normal_test_predictions, label=" Normal Set", marker = '.')
     ax1.plot(params, pca_test_predictions, label="PCA Set ", marker = '+') 
     ax1.set_xticks(params)
@@ -64,7 +65,7 @@ def pca_q(x_train, y_train ,x_test,y_test):
     # plt.show()
 
     
-    # x_test_pca = PCA(n_components=175).fit_transform(x_t)
+    # x_train_pca = PCA(n_components=25).fit_transform(x_train)
 
     normal_test_predictions, pca_test_predictions = [], []
  
@@ -82,8 +83,8 @@ def pca_q(x_train, y_train ,x_test,y_test):
             x_test_pca = pca.transform(x_test)
             print("\t Started PCA testing for ", num , " principal components")
             # clf = KnnClassifier(n_neighbors=7)
-            labels_normal = clf_normal.predict(x_test, return_multiple=True)
-            labels_pca = clf_pca.predict(x_test_pca, return_multiple=True)
+            labels_normal = clf_normal.predict_parallel(x_test, return_multiple=False)
+            labels_pca = clf_pca.predict_parallel(x_test_pca, return_multiple=False)
             # clf.fit(x_train, y_train)
             normal_test_predictions.append(clf_normal.accuracy_score(labels_normal, y_test, n_neighbors=k) * 100)
             pca_test_predictions.append(clf_pca.accuracy_score(labels_pca, y_test, n_neighbors=k) * 100) 
