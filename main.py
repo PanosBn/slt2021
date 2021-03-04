@@ -242,7 +242,6 @@ def main():
     y_test = test_small.values[:,0]
     
 
-
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
