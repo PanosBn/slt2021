@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import time
 import seaborn as sns
 from datetime import datetime 
 from collections import defaultdict
@@ -33,16 +34,9 @@ def plot_q3(normal_test_predictions, pca_test_predictions, l):
     plt.show()
 
 
-def plot_pca(normal_test_predictions,pca_test_predictions, params):
-    fig = plt.figure()
-    fig.set_figwidth(20)
-    ax1 = fig.add_subplot(1,2,1)
-    plt.ylim([80,100])
-    ax1.plot(params, normal_test_predictions, label=" Normal Set", marker = '.')
-    ax1.plot(params, pca_test_predictions, label="PCA Set ", marker = '+') 
-    ax1.set_xticks(params)
-    ax1.legend()
-    plt.show()
+# def plot_pca(pca_test_predictions, normal_test_predictions,params):
+
+
 
 
 
@@ -67,45 +61,73 @@ def pca_q(x_train, y_train ,x_test,y_test):
     
     # x_train_pca = PCA(n_components=25).fit_transform(x_train)
 
-    normal_test_predictions, pca_test_predictions = [], []
+    normal_test_predictions, pca_test_predictions, normal_test_times, pca_test_times = [], [], [], []
  
-    # component_range = [25,50,75,100,125,150,175,200,225,250,275,300]    # Do a search just for the first 300 components because 
-    component_range = [25,50,75,100]                                  # Because of the stuff we see in the explained variance plot
-    ll = 5
-    for num in component_range:
-        for k in tqdm(range(4,ll)):
-            pca = PCA(n_components=num)
-            x_train_pca = pca.fit_transform(x_train)
-            clf_normal = KnnClassifier(n_neighbors=k)
-            clf_normal.fit(x_train,y_train)
-            clf_pca = KnnClassifier(n_neighbors=k)
-            clf_pca.fit(x_train_pca, y_train)
-            x_test_pca = pca.transform(x_test)
-            print("\t Started PCA testing for ", num , " principal components")
-            # clf = KnnClassifier(n_neighbors=7)
-            labels_normal = clf_normal.predict_parallel(x_test, return_multiple=False)
-            labels_pca = clf_pca.predict_parallel(x_test_pca, return_multiple=False)
-            # clf.fit(x_train, y_train)
-            normal_test_predictions.append(clf_normal.accuracy_score(labels_normal, y_test, n_neighbors=k) * 100)
-            pca_test_predictions.append(clf_pca.accuracy_score(labels_pca, y_test, n_neighbors=k) * 100) 
+    component_range = [25,50,75,100,125,150,175,200,225,250,275,300]    # Do a search just for the first 300 components 
+    # component_range = [25,50,75,100]                                 # Because of the stuff we see in the explained variance plot
 
-            # accuracy_test = clf_normal.accuracy_score(clf_normal.predict_parallel(x_test,2), y_test)
-            # accuracy_test_pca = clf_pca.accuracy_score(clf_pca.predict_parallel(x_test_pca,2),y_test)
-            # normal_test_predictions.append(accuracy_test)
-            # pca_test_predictions.append(accuracy_test_pca)
+    for num in tqdm(component_range):
+        pca = PCA(n_components=num)
+        x_train_pca = pca.fit_transform(x_train)
+        clf_normal = KnnClassifier(n_neighbors=4)
+        clf_normal.fit(x_train,y_train)
+        clf_pca = KnnClassifier(n_neighbors=4)
+        clf_pca.fit(x_train_pca, y_train)
+
+        x_test_pca = pca.transform(x_test)
+
+        start_time = time.time()
+        accuracy_test = clf_normal.accuracy_score_old(clf_normal.predict_parallel_old(x_test,2), y_test)
+        time_elapsed_normal = (time.time() - start_time)
+        print("\tNormal Set, time elapsed: ", time_elapsed_normal)
+                
+        start_time = time.time()
+        accuracy_test_pca = clf_pca.accuracy_score_old(clf_pca.predict_parallel_old(x_test_pca,2),y_test)
+        time_elapsed_pca = (time.time() - start_time) 
+        print("\tPCA Set for ", num, " components. Time elapsed: ", time_elapsed_pca)
+
+        normal_test_predictions.append(accuracy_test)
+        normal_test_times.append(time_elapsed_normal)
+
+        pca_test_predictions.append(accuracy_test_pca)
+        pca_test_times.append(time_elapsed_pca)
 
 
-    plot_pca(normal_test_predictions,pca_test_predictions,component_range)
-    # # Write results to a csv for later use
-    # table_for_q_a = pd.DataFrame({'Number of components' : train_predictions, 'loss' : test_predictions})
-    # table_for_q_a.to_csv('pca_component_search.csv',index=False)
+    # plot_pca(pca_test_predictions,normal_test_predictions,component_range)
+
+
+    fig = plt.figure()
+    fig.set_figwidth(20)
+    ax1 = fig.add_subplot(1,2,1)
+    ax2 = fig.add_subplot(1,2,2)
+    ax1.plot(component_range, normal_test_predictions, label=" Normal Set - All components", marker = '.')
+    ax1.plot(component_range, pca_test_predictions, label="PCA Set ", marker = '+') 
+    ax1.set_xticks(component_range)
+    bottom = min(pca_test_predictions)
+    top = max(pca_test_predictions)
+    ax1.set_ylim(bottom-0.05, top+0.05)
+    ax1.legend()
+
+    # ax2.    ax1.plot(component_range, normal_test_predictions, label=" Normal Set - All components", marker = '.')
+    ax2.plot(component_range, normal_test_times, label="Normal Set", marker ='.')
+    ax2.plot(component_range, pca_test_times, label="PCA Set ", marker = '+') 
+    ax2.set_xticks(component_range)
+    n = max(normal_test_times)
+    p = max(pca_test_times)
+    bottom = min(n,p)
+    top = max(n,p)
+    ax2.set_ylim(0, top)
+    ax2.legend()
+
+    plt.show()
+
 
 
 
 def main():
     # initialize datasets from .csv files:
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=1500)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=500, header=None)
 
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]

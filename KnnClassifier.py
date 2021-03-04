@@ -4,12 +4,14 @@ from collections import defaultdict
 from tqdm.contrib.concurrent import process_map, cpu_count, thread_map
 import time
 import multiprocessing
-from metrics import euclidean_distance, minkowski_distance
+import metrics
+from metrics import *
 from functools import partial
 from kdTree import KdTree
 from multiprocessing import Pool
 
 num_cores = multiprocessing.cpu_count()
+
 class KnnClassifier:
     def __init__(self, n_neighbors=5, distance_function=euclidean_distance):
         self.n_neighbors = n_neighbors
@@ -37,7 +39,7 @@ class KnnClassifier:
         else:
             max_workers = 1
 
-        results = process_map(looc_partial, range(len(X)), max_workers=max_workers, chunksize=max(50, int(len(X)/num_cores*2)))
+        results = process_map(looc_partial, range(len(X)), max_workers=max_workers, chunksize=200)
         return results
 
     def looc_helper(self, index, X, y, return_multiple=False, tree_search=False):
@@ -87,8 +89,42 @@ class KnnClassifier:
         I doubt this makes it faster as the inital splitting of 784 may take more time than the parallel processing after that - youri
         """
         predict_partial = partial(self.predict, max_labels=max_labels, return_multiple=return_multiple, single_prediction=single_prediction)
-        results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=200)
         return results
+
+    def predict_parallel_old(self,X, distance_function):
+        predict_partial = partial(self.predict_single, distance_function=distance_function)
+        results = process_map(predict_partial, [digit for digit in X], max_workers=num_cores-1, chunksize=200)
+        # print(results)
+        # predictions, targets = zip(*results)
+
+        return results
+    
+
+    def predict_single(self, test_digit, distance_function):
+
+        myDict = {
+            "euclidean_distance" : euclidean_distance,
+            "canberra" : canberra,
+            "chebyshev" : chebyshev,
+            "braycurtis" : braycurtis,
+            "cosine" : cosine,
+            "seuclidean" : seuclidean,
+        }
+
+        # if (distance_function == 'euclidean'):
+        #     dist_func = euclidean_distance
+        # switch (distance_function) :
+        #     case 1:
+        def find_label(labels):
+            return max(set(labels), key=labels.count) # returns the mode / most common label
+
+        distances = [(myDict[distance_function](test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
+        sorted_distances = sorted(distances, key=lambda distance: distance[0])
+        k_labels = [label for (_, label) in sorted_distances[:self.n_neighbors]]
+        prediction = (find_label(k_labels))
+
+        return prediction
     
     def loss_score(self, pred, targets, n_neighbors=None):
         assert len(pred) == len(targets), "arguments must be of same length"
@@ -117,7 +153,7 @@ class KnnClassifier:
         assert len(pred) == len(targets), "arguments must be of same length"
         
         if not n_neighbors:
-            n_neighbors = self.neighbors
+            n_neighbors = self.n_neighbors
 
         def find_label(labels):
             return max(set(labels), key=labels.count) # returns the mode / most common label
@@ -127,6 +163,16 @@ class KnnClassifier:
         loss = np.mean(pred == targets)
 
         return loss
+    def accuracy_score_old(self, pred, target):
+        """
+        :param pred: list of predictions
+        :param target: list of targets
+        :returns: accuracy score 
+        """
+
+        assert len(pred) == len(target), "arguments must be of same length"
+
+        return np.mean(1-np.equal(pred, target, dtype=int))
     
 
     def predict_kdtree(self, X):
