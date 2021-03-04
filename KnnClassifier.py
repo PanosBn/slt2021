@@ -66,7 +66,7 @@ class KnnClassifier:
             pred = self.tree.search(X[index], distance_func=self.distance_function)
         else:
             pred = self.predict_helper(X[index], return_multiple=return_multiple, single_prediction=True, self_included=True)
-            pred = pred[0]
+            #pred = pred[0]
 
         return pred
 
@@ -131,12 +131,13 @@ class KnnClassifier:
         if not n_neighbors:
             n_neighbors = self.n_neighbors
 
+        
         if multiple:
         # statistics.multimode returns multi modes (if exists) 
         # and chooses the first it passes as the first it returns in the list of modes
         # this solves ties and gives privilege to the closer neighbors
             pred = [statistics.multimode(array[0:n_neighbors])[0] for array in pred]
-
+        
         if how == "loss":
             result = np.mean(pred != targets)
         elif how == "accuracy":

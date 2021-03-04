@@ -76,7 +76,7 @@ def q_a(X, y, Xt, yt):
     k_max = 20
     labels_train = clf.predict_parallel(X, return_multiple=True)
     labels_test = clf.predict_parallel(Xt, return_multiple=True)
-
+    
     for k in tqdm(range(1, k_max + 1)):
         acc_train.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="accuracy") * 100)
         acc_test.append(clf.score(labels_test, yt, n_neighbors=k, multiple=True,  how="accuracy") * 100) 
@@ -98,7 +98,24 @@ def q_a(X, y, Xt, yt):
 
     plt.show()
 
+def q_b(X, y):
+    clf = KnnClassifier(distance_function=euclidean_distance)
+    clf.fit(X, y)
+    acc_looc, k_neigh = [], []
+    k_max = 20
+    labels_train = clf.looc_parallel(X, y, return_multiple=True)
+    print(labels_train)
+    for k in tqdm(range(1, k_max + 1)):
+        acc_looc.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="loss"))
+        k_neigh.append(k) 
     
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+
+    plt.title("LOOCV accuracy", fontdict=font)
+    plt.plot(k_neigh, acc_looc)
+    plt.xlabel('k neighbors')
+    plt.ylabel('LOOCV accuracy score')
+    plt.show()
 
 
 
@@ -149,16 +166,20 @@ def main():
     THIS IS AN EXAMPLE OF HOW THE CLASSIFIER SHOULD BE USED WITH THE NEW CHANGES, I HAVENT DEBUGGED ANY OF THE LINES BELOW 113
     THIS MAKES IT A LOT MORE CLEAR INSIDE THE KNN CLASS AND WHEN CALLING THE FUNCTION
     """
+    # q_b attempt
+    q_b(x_train, y_train)
+
+
     # test
     clf = KnnClassifier()
     clf.fit(x_train, y_train)
 
-    q_a(x_train, y_train, x_test, y_test)
-    start=time.time()
-    pk = test(x_train, y_train)
-    print(pk)
-    heat_pk(pk)
-    print(time.time()-start)
+    # q_a(x_train, y_train, x_test, y_test)
+    # start=time.time()
+    # pk = test(x_train, y_train)
+    # print(pk)
+    # heat_pk(pk)
+    # print(time.time()-start)
 
     # # max number of neighbors
     # max_k = 4
