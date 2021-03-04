@@ -3,6 +3,8 @@ import copy
 import pandas as pd
 import math
 from metrics import euclidean_distance, minkowski_distance
+import statistics
+
 
 class KdTree(list):
     """
@@ -76,15 +78,16 @@ class KdTree(list):
         build_tree(init_nodes, 0) # initial call
 
 
+<<<<<<< HEAD
     def search(self, search_X, distance_func=euclidean_distance):
+=======
+    def search(self, search_X, n_labels=20, distance_func=euclidean_distance):
+>>>>>>> youri
         """
         in this function we calculate the distance between the search_X and each node we pass
         we then check if our search_X at a dimension is greater or smaller than the node we are at
         and then recursively check call the function of that nodes child (which is only 1 in the 
         recursive calls, and could be multiple children/leaves in the base case).
-
-        when using this in the looc we also return the distance between the same node (=0).
-        Thus then we should increase the n_neighbors with 1 and subtract the first in our result.
         """
         distances_labels = []
         distance = (distance_func(search_X, self.root.X), self.root.y) 
@@ -117,9 +120,17 @@ class KdTree(list):
         search_recursion(self.root, search_X, 0)
 
         labels = sorted(distances_labels, key=lambda x:x[0])
+<<<<<<< HEAD
 
         labels = [x[1] for x in labels if x[0] != 0.0] # so if it is not itself included
         return labels
+=======
+
+        labels = [x[1] for x in labels if x[0] != 0.0] # so if it is not itself included
+         
+        return labels[:n_labels]
+
+>>>>>>> youri
 
     
     def __str__(self):
