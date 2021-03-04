@@ -24,7 +24,11 @@ class KnnClassifier:
 
         self.n_neighbors = n_neighbors
         self.tree = None
-        self.distance_function = distance_dict[distance_function]
+
+        if isinstance(distance_function, str):
+            self.distance_function = distance_dict[distance_function]
+        else:
+            self.distance_function = distance_function
 
     def fit(self, x_train, y_train):
         self.x_train = x_train
