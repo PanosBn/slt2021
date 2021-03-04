@@ -15,11 +15,12 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
 
 def q_a(X, y, Xt, yt):
-    clf = KnnClassifier(distance_function="euclidean_distance")
+    minowski = partial(minkowski_distance, p=2)
+    clf = KnnClassifier(distance_function=minowski)
     clf.fit(X, y)
     acc_train, acc_test = [], []
     k_max = 20
-    labels_train = clf.predict_parallel(X, return_multiple=True)
+    labels_train = clf.looc_parallel(X,y, return_multiple=True)
     labels_test = clf.predict_parallel(Xt, return_multiple=True)
     
     for k in tqdm(range(1, k_max + 1)):
@@ -247,47 +248,6 @@ def plot_loocv_time(x_train, y_train):
 
 
 
-def main():
-    sys.setrecursionlimit(10000)
-
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
-    
-    # split both datasets to digits and labels (the first item in every row is a label):
-    x_train = train_small.values[:,1:]
-    y_train = train_small.values[:,0]
-    x_test = test_small.values[:,1:]
-    y_test = test_small.values[:,0]
-    
-
-    """
-    AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
-    """
-    plot_loocv_time(x_train, y_train)
-    q_a(x_train, y_train, x_test, y_test)
-    q_b(x_train, y_train)
-    #q_d(x_train, y_train, x_test, y_test)
-    #q_g(x_train,y_train,x_test,y_test) 
-
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
@@ -344,11 +304,12 @@ def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
 
     for k in tqdm(range(1,max_k+1)):
         for p in range(1, max_p+1):
-            clf = KnnClassifier(n_neighbors=k)
+            minow = partial(minkowski_distance, p=p)
+            clf = KnnClassifier(n_neighbors=k, distance_function=minow)
             clf.fit(x_train, y_train)
 
-            kp_accuracy_train = clf.looc_validate_parallel(x_train, y_train, minkowski_distance, p)
-            kp_accuracy_test = clf.looc_validate_parallel(x_test, y_test, minkowski_distance, p)
+            kp_accuracy_train = clf.looc_parallel(x_train, y_train, return_multiple=True)
+            kp_accuracy_test = clf.looc_parallel(x_test, y_test, return_multiple=True)
             kp_train_predictions[k-1, p-1] = kp_accuracy_train
             kp_test_predictions[k-1, p-1] = kp_accuracy_test
 
@@ -392,3 +353,43 @@ def heat_pk(pk):
     ax.invert_yaxis()
     #plt.axis([1, 20, 1, 15])
     plt.show()
+
+
+def main():
+    sys.setrecursionlimit(10000)
+
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
+    
+    # split both datasets to digits and labels (the first item in every row is a label):
+    x_train = train_small.values[:,1:]
+    y_train = train_small.values[:,0]
+    x_test = test_small.values[:,1:]
+    y_test = test_small.values[:,0]
+    
+
+    """
+    AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
+    """
+    #plot_loocv_time(x_train, y_train)
+    compare_over_kp(x_train, y_train, x_test, y_test, 15, 20)
+    #q_b(x_train, y_train)
+    #q_d(x_train, y_train, x_test, y_test)
+    #q_g(x_train,y_train,x_test,y_test) 
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
