@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import time
-import seaborn as sns
+import altair as alt
 from datetime import datetime 
 from collections import defaultdict
 from KnnClassifier import KnnClassifier
@@ -12,6 +12,14 @@ from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
 
 
+def plot_question_d(df_results):
+    source = df_results
+    alt.Chart(source).mark_bar().encode(
+        x='Model:O',
+        y='test_loss:Q',
+        color='Model:N',
+        column='Metric:N'
+    )
 def main():
     # initialize datasets from .csv files:
     train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
@@ -43,15 +51,8 @@ def main():
     # y_supersampled_df = pd.DataFrame(data = y_super, columns=["class"])
     # # print(y_supersampled_df['class'].value_counts())
 
-    # test_predictions, train_predictions = [], []
-    # looc_test_predictions, looc_train_predictions = [], []
-    # supersampled_predictions = {}
-
-    # distance_functions = ['cosine','braycurtis','sqeuclidean']
-    # ll = 2
-
-    # #Comparison of 3 models 1. Normal, 2. Balanced 3. Balanced with PCA
     clf_normal = KnnClassifier(n_neighbors=5)
+    clf_pca = KnnClassifier(n_neighbors=5)
     clf_supersampled = KnnClassifier(n_neighbors=5)
     clf_supersample_pca = KnnClassifier(n_neighbors=5)
 
@@ -63,35 +64,34 @@ def main():
     # # for distance in distance_functions:
 
     clf_normal.fit(x_train, y_train)
+    clf_pca.fit(x_train_pca,y_train)
     clf_supersampled.fit(X_super,y_super)
     clf_supersample_pca.fit(x_train_pca,y_train)
 
+    times = {}
+    accuracies = {}
 
-    # # normal parallel
+    df_results = pd.DataFrame(columns=['Model','Metric','test loss','time'])
 
-    # # accuracy_train = clf.accuracy_score(clf.predict_parallel(x_test,distance,2), y_test)
-    distance_metrics = ["euclidean_distance","canberra","chebyshev","braycurtis","cosine","seuclidean"]
-    for distance in distance_metrics:
-        print("Start model 1 ")
-        accuracy_test = clf_normal.accuracy_score_old(clf_normal.predict_parallel_old(x_test,distance), y_test)
-        print("Start model 2 ")
-        accuracy_test_supersample = clf_supersampled.accuracy_score_old(clf_supersampled.predict_parallel_old(x_test,distance),y_test)
-        print("Start model 3 ")
-        accuracy_test_supersample_pca = clf_supersample_pca.accuracy_score_old(clf_supersample_pca.predict_parallel_old(x_test_pca,distance),y_test)
+    models = [clf_normal, clf_pca, clf_supersampled, clf_supersample_pca]
+    # model_names = ["Vanilla", "PCA", "Balanced", "Balanced_PCA"]
+    model_names = ["Normal","Balanced_PCA" ]
+    # distance_metrics = ["manhattan","euclidean_distance","canberra","chebyshev","braycurtis","cosine","hamming"]
+    distance_metrics = ["canberra","euclidean_distance"]
 
-        print("Normal ", accuracy_test)
-        print("Supersample ", accuracy_test_supersample)
-        print("Supersample PCA ", accuracy_test_supersample_pca)
-        # # supersampled_predictions.append(accuracy_train_supersampled)
-    # # train_predictions.append(accuracy_train)
-    # # supersampled_predictions.append({"Distance Function" : distance, "Loss": accuracy_train_supersampled})
+    for model, name in zip(models, model_names):
+        for distance in distance_metrics:
+            start_time = time.time()
+            if ((name == "PCA") or (name == "Balanced_PCA")):
+                accuracy_test = model.accuracy_score_old(model.predict_parallel_old(x_test_pca,distance), y_test)
+            else:
+                accuracy_test = model.accuracy_score_old(model.predict_parallel_old(x_test,distance), y_test)
+            time_elapsed = (time.time() - start_time)
 
-    # time_elapsed = datetime.now() - start_time 
+            df_results = df_results.append({'Model':name, 'Metric':distance, 'test loss': accuracy_test, 'time': time_elapsed},ignore_index=True)
 
-    # print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
-
-    # # plot_question_D(supersampled_predictions)
-    
+    # plot_question_d(df_results)
+    # print(df_results)
 
 if __name__ == "__main__":
     main()

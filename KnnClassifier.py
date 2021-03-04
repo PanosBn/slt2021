@@ -104,22 +104,20 @@ class KnnClassifier:
     def predict_single(self, test_digit, distance_function):
 
         myDict = {
+            "manhattan" : manhattan,
             "euclidean_distance" : euclidean_distance,
             "canberra" : canberra,
             "chebyshev" : chebyshev,
             "braycurtis" : braycurtis,
             "cosine" : cosine,
-            "seuclidean" : seuclidean,
+            "hamming" : hamming
         }
-
-        # if (distance_function == 'euclidean'):
-        #     dist_func = euclidean_distance
-        # switch (distance_function) :
-        #     case 1:
+        
         def find_label(labels):
             return max(set(labels), key=labels.count) # returns the mode / most common label
-
+        
         distances = [(myDict[distance_function](test_digit, digit), label) for (digit, label) in zip(self.x_train, self.y_train)]
+
         sorted_distances = sorted(distances, key=lambda distance: distance[0])
         k_labels = [label for (_, label) in sorted_distances[:self.n_neighbors]]
         prediction = (find_label(k_labels))
