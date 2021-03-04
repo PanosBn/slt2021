@@ -193,47 +193,65 @@ def q_g(x_train, y_train ,x_test,y_test):
 
     plt.show()
 
-def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
-    kp_test_predictions = np.zeros((max_k, max_p))
-    kp_train_predictions = np.zeros((max_k, max_p))
+def plot_loocv_time(x_train, y_train):
+    clf = KnnClassifier()
 
-    for k in tqdm(range(1,max_k+1)):
-        for p in range(1, max_p+1):
-            clf = KnnClassifier(n_neighbors=k)
-            clf.fit(x_train, y_train)
+    time_single, time_parallel, time_tree_single, time_tree_parallel = [], [], [], []
+    acc_classic, acc_tree = [],[]
+    for size in tqdm(range(10, 110, 10)):
+        slicer = int(len(x_train) * 0.01 * size)
 
-            kp_accuracy_train = clf.looc_validate_parallel(x_train, y_train, minkowski_distance, p)
-            kp_accuracy_test = clf.looc_validate_parallel(x_test, y_test, minkowski_distance, p)
-            kp_train_predictions[k-1, p-1] = kp_accuracy_train
-            kp_test_predictions[k-1, p-1] = kp_accuracy_test
+        start = time.time()
+        pred = clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, return_multiple=False)
+        time_single.append(time.time() - start)
+        acc_classic.append(clf.score(pred, y_train[:slicer]))
 
-    print(kp_train_predictions, "\n\n", kp_test_predictions)
-    plot_kp(kp_train_predictions, kp_test_predictions, max_k)
+        start = time.time()
+        clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True)
+        time_parallel.append(time.time() - start)      
 
-def test(X, y):
-    p_max = 5
-    k_max = 20
-    pk = []
-    for p in range(1, p_max + 1):
-        minowski = partial(minkowski_distance, p=p)
+        start = time.time()
+        pred = clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, tree_search=True, return_multiple=False)
 
-        clf = KnnClassifier(distance_function=minowski)
-        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
-        loss = []
-        
-        for k in range(1, k_max + 1):
-            loss.append(clf.loss_score(labels, y, n_neighbors=k)) 
-        pk.append(loss)
+        time_tree_single.append(time.time() - start)
+        acc_tree.append(clf.score(pred, y_train[:slicer], multiple=True))
 
-    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
-    return pk     
+
+        start = time.time()
+        clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True, tree_search=True)
+        time_tree_parallel.append(time.time() - start)
+
+    fig, (ax1,ax2) = plt.subplots(2, 1)
+    ax1.plot(list(range(10, 110, 10)), time_single, label="classic single")
+    ax1.plot(list(range(10, 110, 10)), time_parallel, label="classic parallel")
+    ax1.plot(list(range(10, 110, 10)), time_tree_single, label="tree single")
+    ax1.plot(list(range(10, 110, 10)), time_tree_parallel, label="tree parallel")
+    ax1.set_xticks(list(range(10, 110, 10)))
+    ax1.legend()
+    ax1.set_xlabel("data set size in %")
+    ax1.set_ylabel("time in seconds")
+    plt.title("Difference time and accuracy in various implementations")
+
+
+    ax2.plot(list(range(10, 110, 10)), acc_classic, label="classic")
+    ax2.plot(list(range(10, 110, 10)), acc_tree, label="tree")
+    ax2.set_xticks(list(range(10, 110, 10)))
+    ax2.set_xlabel("data set size in %")
+    ax2.set_ylabel("loss")
+
+
+    ax2.legend()
+
+    
+    plt.show()
+
 
 
 def main():
     sys.setrecursionlimit(10000)
 
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=300, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -245,9 +263,10 @@ def main():
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
-    #q_a(x_train, y_train, x_test, y_test)
-    #q_b(x_train, y_train)
-    q_d(x_train, y_train, x_test, y_test)
+    plot_loocv_time(x_train, y_train)
+    q_a(x_train, y_train, x_test, y_test)
+    q_b(x_train, y_train)
+    #q_d(x_train, y_train, x_test, y_test)
     #q_g(x_train,y_train,x_test,y_test) 
 
 
