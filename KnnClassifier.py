@@ -44,7 +44,10 @@ class KnnClassifier:
             "braycurtis" : braycurtis,
             "cosine" : cosine,
         }
-        self.distance_function = distance_dict[value]
+        if isinstance(distance_function, str):
+            self.distance_function = distance_dict[distance_function]
+        else:
+            self.distance_function = distance_function
 
 
     def looc_parallel(self, X, y, return_multiple=False, tree_search=False, parallel=True):
