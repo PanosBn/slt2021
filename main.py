@@ -232,8 +232,8 @@ def test(X, y):
 def main():
     sys.setrecursionlimit(10000)
 
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=300, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=30, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=10, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
