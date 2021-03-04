@@ -4,7 +4,7 @@ from collections import defaultdict
 from tqdm.contrib.concurrent import process_map, cpu_count, thread_map
 import time
 import multiprocessing
-from metrics import euclidean_distance, minkowski_distance
+from metrics import *
 from functools import partial
 from kdTree import KdTree
 from multiprocessing import Pool
@@ -12,15 +12,35 @@ import statistics
 
 num_cores = multiprocessing.cpu_count()
 class KnnClassifier:
-    def __init__(self, n_neighbors=5, distance_function=euclidean_distance):
+    def __init__(self, n_neighbors=5, distance_function="euclidean_distance"):
+        distance_dict = {
+            "manhattan" : manhattan,
+            "euclidean_distance" : euclidean_distance,
+            "canberra" : canberra,
+            "chebyshev" : chebyshev,
+            "braycurtis" : braycurtis,
+            "cosine" : cosine,
+        }
+
         self.n_neighbors = n_neighbors
         self.tree = None
-        self.distance_function = distance_function
+        self.distance_function = distance_dict[distance_function]
 
     def fit(self, x_train, y_train):
         self.x_train = x_train
         self.y_train = y_train
         self.tree = KdTree(self.x_train, self.y_train)
+
+    def set_distance_func(self, value):
+        distance_dict = {
+            "manhattan" : manhattan,
+            "euclidean_distance" : euclidean_distance,
+            "canberra" : canberra,
+            "chebyshev" : chebyshev,
+            "braycurtis" : braycurtis,
+            "cosine" : cosine,
+        }
+        self.distance_function = distance_dict[value]
 
 
     def looc_parallel(self, X, y, return_multiple=False, tree_search=False, parallel=True):
@@ -80,6 +100,7 @@ class KnnClassifier:
         :param self_included: whether the X to predict is included in the self.x_train and self.y_train
         :returns: array of n labels
         """
+
         predictions = []
 
         if single_prediction:
@@ -92,7 +113,7 @@ class KnnClassifier:
             if self_included:
                 k_labels = [label for (distance, label) in sorted_distances[1:n_labels+1]] # we exlcude itself (the closest) when looc is used
             else:
-                k_labels = [label for (distance, label) in sorted_distances[:n_labels]] #
+                k_labels = [label for (distance, label) in sorted_distances[0:n_labels]] #
 
             predictions.append(k_labels)
 
