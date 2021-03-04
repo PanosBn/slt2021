@@ -77,12 +77,12 @@ def pca_q(x_train, y_train ,x_test,y_test):
         x_test_pca = pca.transform(x_test)
 
         start_time = time.time()
-        accuracy_test = clf_normal.accuracy_score_old(clf_normal.predict_parallel_old(x_test,2), y_test)
+        accuracy_test = clf_normal.accuracy_score_old(clf_normal.predict_parallel_old(x_test,"euclidean_distance"), y_test)
         time_elapsed_normal = (time.time() - start_time)
         print("\tNormal Set, time elapsed: ", time_elapsed_normal)
                 
         start_time = time.time()
-        accuracy_test_pca = clf_pca.accuracy_score_old(clf_pca.predict_parallel_old(x_test_pca,2),y_test)
+        accuracy_test_pca = clf_pca.accuracy_score_old(clf_pca.predict_parallel_old(x_test_pca, "euclidean_distance"),y_test)
         time_elapsed_pca = (time.time() - start_time) 
         print("\tPCA Set for ", num, " components. Time elapsed: ", time_elapsed_pca)
 

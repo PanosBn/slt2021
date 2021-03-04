@@ -110,7 +110,6 @@ class KnnClassifier:
             "chebyshev" : chebyshev,
             "braycurtis" : braycurtis,
             "cosine" : cosine,
-            "hamming" : hamming
         }
         
         def find_label(labels):
