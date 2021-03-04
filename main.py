@@ -193,6 +193,43 @@ def q_g(x_train, y_train ,x_test,y_test):
 
     plt.show()
 
+def plot_loocv_time(x_train, y_train):
+    clf = KnnClassifier()
+
+    time_single, time_parallel, time_tree_single, time_tree_parallel = [], [], [], []
+    acc_classic, acc_tree = [],[]
+    for size in tqdm(range(1, 11)):
+        slicer = round(len(x_train) * 0.1 * size)
+
+        start = time.time()
+        acc_classic.append(clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False))
+        time_single.append(time.time() - start)
+
+        start = time.time()
+        clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True)
+        time_parallel.append(time.time() - start)      
+
+        start = time.time()
+        acc_tree.append(clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, tree_search=True))
+        time_tree_single.append(time.time() - start)
+
+        start = time.time()
+        clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True, tree_search=True)
+        time_tree_parallel.append(time.time() - start)
+
+    fig, (ax1,ax2) = plt.subplots(2, 1)
+    ax1.plot(range(10, 110, 10), time_single, label="classic single")
+    ax1.plot(range(10, 110, 10), time_parallel, label="classic parallel")
+    ax1.plot(range(10, 110, 10), time_tree_single, label="tree single")
+    ax1.plot(range(10, 110, 10), time_tree_parallel, label="tree parallel")
+    ax1.legend()
+
+    ax2.plot(range(10, 110, 10), acc_classic, label="loss classic")
+    ax2.plot(range(10, 110, 10), acc_tree, label="loss tree")
+    
+    plt.title("Difference time and accuracy in various implementations")
+    plt.show()
+
 
 
 def main():
@@ -212,6 +249,7 @@ def main():
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
+    plot_loocv_time(x_train, y_train)
     q_a(x_train, y_train, x_test, y_test)
     q_b(x_train, y_train)
     #q_d(x_train, y_train, x_test, y_test)
