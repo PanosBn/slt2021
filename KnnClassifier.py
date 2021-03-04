@@ -83,7 +83,7 @@ class KnnClassifier:
         :returns: array of labels
         """
         if tree_search:
-            pred = self.tree.search(X[index], distance_func=self.distance_function)
+            pred = self.tree.search(X[index], distance_func=self.distance_function) # tree deals with self_inclusion by itself
         else:
             pred = self.predict_helper(X[index], return_multiple=return_multiple, single_prediction=True, self_included=True)
             #pred = pred[0]
@@ -194,6 +194,7 @@ class KnnClassifier:
             else:
                 if self_included:
                     pred = statistics.multimode(pred[1:self.n_neighbors])[0] # we exlcude itself (the closest) when self is included is used
+                    print(pred)
                 else:
                     pred = statistics.multimode(pred[:self.n_neighbors])[0]
             

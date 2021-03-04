@@ -198,36 +198,51 @@ def plot_loocv_time(x_train, y_train):
 
     time_single, time_parallel, time_tree_single, time_tree_parallel = [], [], [], []
     acc_classic, acc_tree = [],[]
-    for size in tqdm(range(1, 11)):
-        slicer = round(len(x_train) * 0.1 * size)
+    for size in tqdm(range(10, 110, 10)):
+        slicer = int(len(x_train) * 0.01 * size)
 
         start = time.time()
-        acc_classic.append(clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False))
+        pred = clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, return_multiple=False)
         time_single.append(time.time() - start)
+        acc_classic.append(clf.score(pred, y_train[:slicer]))
 
         start = time.time()
         clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True)
         time_parallel.append(time.time() - start)      
 
         start = time.time()
-        acc_tree.append(clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, tree_search=True))
+        pred = clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=False, tree_search=True, return_multiple=False)
+
         time_tree_single.append(time.time() - start)
+        acc_tree.append(clf.score(pred, y_train[:slicer], multiple=True))
+
 
         start = time.time()
         clf.looc_parallel(x_train[:slicer], y_train[:slicer], parallel=True, tree_search=True)
         time_tree_parallel.append(time.time() - start)
 
     fig, (ax1,ax2) = plt.subplots(2, 1)
-    ax1.plot(range(10, 110, 10), time_single, label="classic single")
-    ax1.plot(range(10, 110, 10), time_parallel, label="classic parallel")
-    ax1.plot(range(10, 110, 10), time_tree_single, label="tree single")
-    ax1.plot(range(10, 110, 10), time_tree_parallel, label="tree parallel")
+    ax1.plot(list(range(10, 110, 10)), time_single, label="classic single")
+    ax1.plot(list(range(10, 110, 10)), time_parallel, label="classic parallel")
+    ax1.plot(list(range(10, 110, 10)), time_tree_single, label="tree single")
+    ax1.plot(list(range(10, 110, 10)), time_tree_parallel, label="tree parallel")
+    ax1.set_xticks(list(range(10, 110, 10)))
     ax1.legend()
-
-    ax2.plot(range(10, 110, 10), acc_classic, label="loss classic")
-    ax2.plot(range(10, 110, 10), acc_tree, label="loss tree")
-    
+    ax1.set_xlabel("data set size in %")
+    ax1.set_ylabel("time in seconds")
     plt.title("Difference time and accuracy in various implementations")
+
+
+    ax2.plot(list(range(10, 110, 10)), acc_classic, label="classic")
+    ax2.plot(list(range(10, 110, 10)), acc_tree, label="tree")
+    ax2.set_xticks(list(range(10, 110, 10)))
+    ax2.set_xlabel("data set size in %")
+    ax2.set_ylabel("loss")
+
+
+    ax2.legend()
+
+    
     plt.show()
 
 
@@ -235,8 +250,8 @@ def plot_loocv_time(x_train, y_train):
 def main():
     sys.setrecursionlimit(10000)
 
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=300, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
