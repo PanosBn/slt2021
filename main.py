@@ -43,24 +43,58 @@ def q_a(X, y, Xt, yt):
 
     plt.show()
 
-def q_b(X, y):
-    clf = KnnClassifier(distance_function="euclidean_distance")
+def q_b(X, y, Xt, yt):
+    clf = KnnClassifier()
     clf.fit(X, y)
-    acc_looc, k_neigh = [], []
+    loss_looc, loss_test = [], []
     k_max = 20
     labels_train = clf.looc_parallel(X, y, return_multiple=True)
-
-    for k in tqdm(range(1, k_max + 1)):
-        acc_looc.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="loss"))
-        k_neigh.append(k) 
+    labels_test = clf.predict_parallel(Xt, return_multiple=True)
     
-    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+    for k in tqdm(range(1, k_max + 1)):
+        loss_looc.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="loss"))
+        loss_test.append(clf.score(labels_test, yt, n_neighbors=k, multiple=True,  how="loss"))
 
-    plt.title("LOOCV accuracy", fontdict=font)
-    plt.plot(k_neigh, acc_looc)
-    plt.xlabel('k neighbors')
-    plt.ylabel('LOOCV accuracy score')
+    # d_qb = {"LOOCV": loss_looc, "test": loss_test} 
+    # df_qb = pd.DataFrame(d_qb)
+    # df_qb.index += 1
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 12,}
+    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    # fig, ax = plt.subplots(1, 1, figsize=(7, 6.75))
+    # plt.title("LOOCV train loss compared to empirical test loss", fontdict=font)
+    # ax.set_xticks(x)
+    # ax.xaxis.tick_top()
+    # df_qb.plot(table=np.round(df_qb.T, 3), ax=ax)
+    # plt.show()
+
+    fg, (ax1,ax2) = plt.subplots(2, 1)
+    ax1.plot(range(1, k_max + 1), loss_looc, label="LOOCV loss")
+    ax1.plot(range(1, k_max + 1), loss_test, label="test loss")
+    ax1.legend()
+    ax1.set_title("Empirical loss as a function of k", fontdict=font)
+    ax1.set_xticks(range(1, k_max + 1))
+    ax1.set_xlabel("k neighbors")
+    ax1.set_ylabel("loss")
+
+    table = [loss_looc, loss_test]
+
+    ax2 = sns.heatmap(table, cmap='BuPu', square=True, annot=True, annot_kws={"size": 10}, fmt='.3f', yticklabels=["train", "test"], xticklabels=range(1, k_max+1), cbar=False)
+
     plt.show()
+
+    
+    # x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    # font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+
+    # plt.title("LOOCV train loss compared to empirical test loss", fontdict=font)
+    # plt.plot(x, loss_looc, label='LOOCV')
+    # plt.plot(x, loss_test, label='test')
+    # plt.plot()
+    # plt.legend()
+    # plt.xlabel('k neighbors')
+    # plt.ylabel('loss')
+    # plt.show()
 
 def q_c():
     pass
@@ -264,9 +298,9 @@ def main():
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
-    plot_loocv_time(x_train, y_train)
-    q_a(x_train, y_train, x_test, y_test)
-    q_b(x_train, y_train)
+    #plot_loocv_time(x_train, y_train)
+    #q_a(x_train, y_train, x_test, y_test)
+    q_b(x_train, y_train, x_test, y_test)
     #q_d(x_train, y_train, x_test, y_test)
     #q_g(x_train,y_train,x_test,y_test) 
 
