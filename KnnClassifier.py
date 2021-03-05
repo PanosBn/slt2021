@@ -76,7 +76,7 @@ class KnnClassifier:
         else:
             max_workers = 1
 
-        results = process_map(looc_partial, range(len(X)), max_workers=max_workers, chunksize=max(50, int(len(X)/num_cores*2)))
+        results = process_map(looc_partial, range(len(X)), max_workers=max_workers, chunksize=max(32, int(len(X)/num_cores*2)))
         return results
 
     def looc_helper(self, index, X, y, return_multiple=False, tree_search=False):
@@ -142,7 +142,7 @@ class KnnClassifier:
             predict_partial = partial(self.predict_kdtree, n_labels=n_labels, return_multiple=return_multiple, single_prediction=True, self_included=self_included)
         else:
             predict_partial = partial(self.predict_helper, n_labels=n_labels, return_multiple=return_multiple, single_prediction=True, self_included=self_included)
-        results = process_map(predict_partial, X, max_workers=num_cores-1, chunksize=max(50, int(len(X)/num_cores*2)))
+        results = process_map(predict_partial, X, max_workers=num_cores-1, chunksize=max(32, int(len(X)/num_cores*2)))
         return results
     
     def score(self, pred, targets, how="loss", n_neighbors=None, multiple=False):

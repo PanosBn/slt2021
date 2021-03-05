@@ -69,11 +69,11 @@ def q_c(X, y):
     p_max = 15
     k_max = 20
     pk = []
-    for p in range(1, p_max+1):
+    for p in tqdm(range(1, p_max+1)):
         minkowski = partial(minkowski_distance, p=p)
 
         clf = KnnClassifier(distance_function=minkowski)
-        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=True) # use tree search to search with kdtree, this makes it faster, but also increases error
         loss = []
         
         for k in range(1, k_max + 1):
@@ -156,47 +156,73 @@ def q_e(X, y):
     minkowski = partial(minkowski_distance, p=p_max)
 
     clf = KnnClassifier(distance_function=minkowski)
-    labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
-    loss = []
-    
+    #labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+    labelst = clf.looc_parallel(X, y, return_multiple=True, tree_search=True) # use tree search to search with kdtree, this makes it faster, but also increases error
+
+    #loss = []
+    losst = []
     for k in tqdm(range(1, k_max + 1)):
-        loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
-        print(loss[k-1])
+        #loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
+        losst.append(clf.score(labelst, y, n_neighbors=k, multiple=True))
+        print(losst[k-1])
     
     font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
 
     fg, (ax1,ax2) = plt.subplots(2, 1)
-    ax1.plot(range(1, k_max + 1), loss, label="train set")
+    #ax1.plot(range(1, k_max + 1), loss, label="classic")
+    ax1.plot(range(1, k_max + 1), losst, label="LOOCV Tree Search")
+
     ax1.legend()
     plt.title("LOOCV Loss ", fontdict=font)
     ax1.set_xticks(range(1, k_max + 1))
     ax1.set_xlabel("k neighbors")
     ax1.set_ylabel("Loss score")
 
-    loss = [loss]
+    loss = [losst]
     ax2 = sns.heatmap(loss, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=["Loss"], xticklabels=range(1, k_max+1), cbar=False)
 
     plt.show()
 
-def q_f():
-    pass
+def q_f(X, y, Xt, yt):
+    p_max = 8
+    k_max = 20
+    pk = []
+    minkowski = partial(minkowski_distance, p=p_max)
+
+    clf = KnnClassifier(distance_function=minkowski)
+    clf.fit(X, y)
+    #labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+    labelst = clf.predict_parallel(Xt, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+
+    #loss = []
+    losst = []
+    for k in tqdm(range(1, k_max + 1)):
+        #loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
+        losst.append(clf.score(labelst, yt, n_neighbors=k, multiple=True))
+        print(losst[k-1])
+    
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+
+    fg, (ax1,ax2) = plt.subplots(2, 1)
+    #ax1.plot(range(1, k_max + 1), loss, label="classic")
+    ax1.plot(range(1, k_max + 1), losst, label="Test Loss")
+
+    ax1.legend()
+    plt.title("Test Loss vs k Neighbors", fontdict=font)
+    ax1.set_xticks(range(1, k_max + 1))
+    ax1.set_xlabel("k Neighbors")
+    ax1.set_ylabel("Loss Score")
+
+    loss = [losst]
+    ax2 = sns.heatmap(loss, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=["Loss"], xticklabels=range(1, k_max+1), cbar=False)
+
+    plt.show()
 
 def q_g(x_train, y_train ,x_test,y_test):
-
-    """
-    :To do the dimensionality reduction we need to see which of the 784 features actually
-    :contribute the most to the model. So we start by plotting the explained variance of all the components(i.e. 784)
-    :In the plot we will see that ~175 components contribute around 97% of the explained variance, so we will do a 
-    :dimensionality reduction and we will keep only these components, thus reducing each image from 784 datapoints to just 
-    :175.
-    :An alternative(and probably the best) way to calculate the optimal amount of components would be to do 
-    :a search with varying amount of components (i.e. from 1 to 784) and compare the accuracy.
-    """
 
     normal_test_predictions, pca_test_predictions, normal_test_times, pca_test_times = [], [], [], []
  
     component_range = [25,50,75,100,125,150,175,200,225,250,275,300]    # Do a search just for the first 300 components 
-    # component_range = [25,50,75,100]                                 # Because of the stuff we see in the explained variance plot
 
     for num in tqdm(component_range):
         pca = PCA(n_components=num)
@@ -300,28 +326,6 @@ def plot_loocv_time(x_train, y_train):
     
     plt.show()
 
-# def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
-#     """
-#     IS THIS STILL NEEDED?
-#     """
-#     x_range = np.linspace(1, max_k, num=max_k)
-#     fig = plt.figure()
-#     fig.set_figwidth(15)
-    
-#     ax1 = fig.add_subplot(1, 1, 1)
-#     ax1.plot(x_range, y_train_basic, label='Training set, basic', marker='.')
-#     ax1.plot(x_range, y_test_basic, label='Test set, basic', marker='.')
-#     ax1.plot(x_range, y_train_loocv, label='Training set, LOOC', marker='.')
-#     ax1.plot(x_range, y_test_loocv, label='Test set, LOOC', marker='.')
-#     ax1.set_xlabel("Number of neighbours")
-#     ax1.set_ylabel("Accuracy (%))")
-#     ax1.set_title("Accuracy basic vs. LOOC")
-#     ax1.legend()
-
-#     plt.show()
-#     print("test")
-
-
 
 def main():
     sys.setrecursionlimit(10000)
@@ -333,7 +337,7 @@ def main():
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
 
     train = pd.read_csv("data/MNIST_train.csv", header=None)
-    test = pd.read_csv("data/MNIST_train.csv", header=None)
+    test = pd.read_csv("data/MNIST_test.csv", header=None)
 
     
     # split both datasets to digits and labels (the first item in every row is a label):
@@ -353,14 +357,16 @@ def main():
     """
     start_time, stop_time = 0, 0
     start_time = timer()
+
     # plot_loocv_time(x_train, y_train)
     # compare_over_kp(x_train, y_train, x_test, y_test, 4, 4)
     #q_a(x_train, y_train, x_test, y_test)
     # q_b(x_train, y_train)
     #q_c(x_train, y_train)
-    # q_d(x_train, y_train, x_test, y_test)
+    #q_d(x_train, y_train, x_test, y_test)
     # q_b(x_train_big, y_train_big)
-    q_e(x_train_big, y_train_big)
+    # q_e(x_train_big, y_train_big)
+    q_f(x_train_big, y_train_big, x_test_big, y_test_big)
     # q_g(x_train,y_train,x_test,y_test)
 
 
@@ -370,16 +376,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
