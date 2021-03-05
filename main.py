@@ -159,19 +159,22 @@ def q_e(X, y):
     labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
     loss = []
     
-    for k in range(1, k_max + 1):
+    for k in tqdm(range(1, k_max + 1)):
         loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
-        # print(clf.score(labels, y, n_neighbors=k, multiple=True))
-    pk.append(loss)
-
-    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
+        print(loss[k-1])
     
     font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
-    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=[8], xticklabels=range(1, k_max+1), cbar=False)
-    plt.title("Loss for (k, p)", fontdict=font)
-    plt.xlabel('Parameter k', fontdict=font)
-    # plt.ylabel(f'p = {p_max}', fontdict=font)
-    ax.invert_yaxis()
+
+    fg, (ax1,ax2) = plt.subplots(2, 1)
+    ax1.plot(range(1, k_max + 1), loss, label="train set")
+    ax1.legend()
+    plt.title("LOOCV Loss ", fontdict=font)
+    ax1.set_xticks(range(1, k_max + 1))
+    ax1.set_xlabel("k neighbors")
+    ax1.set_ylabel("Loss score")
+
+    loss = [loss]
+    ax2 = sns.heatmap(loss, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=["Loss"], xticklabels=range(1, k_max+1), cbar=False)
 
     plt.show()
 
@@ -330,6 +333,8 @@ def main():
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
 
     train = pd.read_csv("data/MNIST_train.csv", header=None)
+    test = pd.read_csv("data/MNIST_train.csv", header=None)
+
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -340,6 +345,9 @@ def main():
     x_train_big = train.values[:,1:]
     y_train_big = train.values[:,0]
 
+    x_test_big = test.values[:,1:]
+    y_test_big = test.values[:,0]
+
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
@@ -347,13 +355,14 @@ def main():
     start_time = timer()
     # plot_loocv_time(x_train, y_train)
     # compare_over_kp(x_train, y_train, x_test, y_test, 4, 4)
-    q_a(x_train, y_train, x_test, y_test)
+    #q_a(x_train, y_train, x_test, y_test)
     # q_b(x_train, y_train)
     #q_c(x_train, y_train)
     # q_d(x_train, y_train, x_test, y_test)
     # q_b(x_train_big, y_train_big)
     q_e(x_train_big, y_train_big)
     # q_g(x_train,y_train,x_test,y_test)
+
 
     stop_time = timer()
     print(f"Time elapsed: {stop_time - start_time} sec")
