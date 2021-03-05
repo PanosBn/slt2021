@@ -21,12 +21,12 @@ def q_a(X, y, Xt, yt):
     clf.fit(X, y)
     acc_train, acc_test = [], []
     k_max = 20
-    labels_train = clf.looc_parallel(X,y, return_multiple=True)
+    labels_train = clf.predict_parallel(X, return_multiple=True)
     labels_test = clf.predict_parallel(Xt, return_multiple=True)
     
     for k in tqdm(range(1, k_max + 1)):
-        acc_train.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="accuracy") * 100)
-        acc_test.append(clf.score(labels_test, yt, n_neighbors=k, multiple=True,  how="accuracy") * 100) 
+        acc_train.append(clf.score(labels_train, y, n_neighbors=k, multiple=True, how="loss"))
+        acc_test.append(clf.score(labels_test, yt, n_neighbors=k, multiple=True,  how="loss")) 
     
     font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
 
@@ -34,14 +34,14 @@ def q_a(X, y, Xt, yt):
     ax1.plot(range(1, k_max + 1), acc_train, label="train set")
     ax1.plot(range(1, k_max + 1), acc_test, label="test set")
     ax1.legend()
-    ax1.set_title("Accuracy kNN compared to k neighbors", fontdict=font)
+    ax1.set_title("Loss kNN compared to k neighbors", fontdict=font)
     ax1.set_xticks(range(1, k_max + 1))
     ax1.set_xlabel("k neighbors")
-    ax1.set_ylabel("Accuracy score in %")
+    ax1.set_ylabel("Loss score")
 
     table = [acc_train, acc_test]
 
-    ax2 = sns.heatmap(table, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f', yticklabels=["train", "test"], xticklabels=range(1, k_max+1), cbar=False)
+    ax2 = sns.heatmap(table, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.3f', yticklabels=["train", "test"], xticklabels=range(1, k_max+1), cbar=False)
 
     plt.show()
 
@@ -301,10 +301,10 @@ def main():
     sys.setrecursionlimit(10000)
 
     # for testing plots
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=30, header=None)
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
     
     # train_small = pd.read_csv("data/MNIST_train_small.csv", header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -320,8 +320,9 @@ def main():
     start_time = timer()
     # plot_loocv_time(x_train, y_train)
     # compare_over_kp(x_train, y_train, x_test, y_test, 4, 4)
+    q_a(x_train, y_train, x_test, y_test)
     # q_b(x_train, y_train)
-    q_c(x_train, y_train)
+    #q_c(x_train, y_train)
     # q_d(x_train, y_train, x_test, y_test)
     # q_g(x_train,y_train,x_test,y_test)
 
