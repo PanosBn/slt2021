@@ -84,7 +84,7 @@ def q_c(X, y):
     pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
     
     font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
-    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f', yticklabels=range(1, p_max+1), xticklabels=range(1, k_max+1), cbar=False)
+    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=range(1, p_max+1), xticklabels=range(1, k_max+1), cbar=False)
     plt.title("Loss for (k, p)", fontdict=font)
     plt.xlabel('Parameter k', fontdict=font)
     plt.ylabel('Parameter p', fontdict=font)
@@ -149,8 +149,31 @@ def q_d(x_train, y_train, x_test, y_test):
     df_results.sort_values('test loss')
     plot_question_d(df_results,distance_metrics)
 
-def q_e():
-    pass
+def q_e(X, y):
+    p_max = 8
+    k_max = 20
+    pk = []
+    minkowski = partial(minkowski_distance, p=p_max)
+
+    clf = KnnClassifier(distance_function=minkowski)
+    labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+    loss = []
+    
+    for k in range(1, k_max + 1):
+        loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
+        # print(clf.score(labels, y, n_neighbors=k, multiple=True))
+    pk.append(loss)
+
+    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
+    
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.5f', yticklabels=[8], xticklabels=range(1, k_max+1), cbar=False)
+    plt.title("Loss for (k, p)", fontdict=font)
+    plt.xlabel('Parameter k', fontdict=font)
+    # plt.ylabel(f'p = {p_max}', fontdict=font)
+    ax.invert_yaxis()
+
+    plt.show()
 
 def q_f():
     pass
@@ -305,6 +328,8 @@ def main():
     
     # train_small = pd.read_csv("data/MNIST_train_small.csv", header=None)
     test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
+
+    train = pd.read_csv("data/MNIST_train.csv", header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -312,6 +337,8 @@ def main():
     x_test = test_small.values[:,1:]
     y_test = test_small.values[:,0]
     
+    x_train_big = train.values[:,1:]
+    y_train_big = train.values[:,0]
 
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
@@ -321,12 +348,14 @@ def main():
     # plot_loocv_time(x_train, y_train)
     # compare_over_kp(x_train, y_train, x_test, y_test, 4, 4)
     # q_b(x_train, y_train)
-    q_c(x_train, y_train)
+    # q_c(x_train, y_train)
     # q_d(x_train, y_train, x_test, y_test)
+    # q_b(x_train_big, y_train_big)
+    q_e(x_train_big, y_train_big)
     # q_g(x_train,y_train,x_test,y_test)
 
     stop_time = timer()
-    print(f"Time elapsed: {stop_time - start_time}, sec")
+    print(f"Time elapsed: {stop_time - start_time} sec")
 
 
 if __name__ == "__main__":
