@@ -13,10 +13,11 @@ import time
 from functools import partial
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import SMOTE
+from timeit import default_timer as timer
 
 def q_a(X, y, Xt, yt):
-    minowski = partial(minkowski_distance, p=2)
-    clf = KnnClassifier(distance_function=minowski)
+    minkowski = partial(minkowski_distance, p=2)
+    clf = KnnClassifier(distance_function=minkowski)
     clf.fit(X, y)
     acc_train, acc_test = [], []
     k_max = 20
@@ -63,8 +64,35 @@ def q_b(X, y):
     plt.ylabel('LOOCV accuracy score')
     plt.show()
 
-def q_c():
-    pass
+def q_c(X, y):
+
+    p_max = 15
+    k_max = 20
+    pk = []
+    for p in range(1, p_max+1):
+        minkowski = partial(minkowski_distance, p=p)
+
+        clf = KnnClassifier(distance_function=minkowski)
+        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
+        loss = []
+        
+        for k in range(1, k_max + 1):
+            loss.append(clf.score(labels, y, n_neighbors=k, multiple=True))
+            # print(clf.score(labels, y, n_neighbors=k, multiple=True))
+        pk.append(loss)
+
+    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
+    
+    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
+    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f', yticklabels=range(1, p_max+1), xticklabels=range(1, k_max+1), cbar=False)
+    plt.title("Loss for (k, p)", fontdict=font)
+    plt.xlabel('Parameter k', fontdict=font)
+    plt.ylabel('Parameter p', fontdict=font)
+    ax.invert_yaxis()
+
+    plt.show()
+
+   
 
 def q_d(x_train, y_train, x_test, y_test):
 
@@ -246,120 +274,37 @@ def plot_loocv_time(x_train, y_train):
     
     plt.show()
 
-
-
-
-
-def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
-    """
-    IS THIS STILL NEEDED?
-    """
-    x_range = np.linspace(1, max_k, num=max_k)
-    fig = plt.figure()
-    fig.set_figwidth(15)
+# def plot_accuracy(y_train_basic, y_test_basic, y_train_loocv, y_test_loocv, max_k):
+#     """
+#     IS THIS STILL NEEDED?
+#     """
+#     x_range = np.linspace(1, max_k, num=max_k)
+#     fig = plt.figure()
+#     fig.set_figwidth(15)
     
-    ax1 = fig.add_subplot(1, 1, 1)
-    ax1.plot(x_range, y_train_basic, label='Training set, basic', marker='.')
-    ax1.plot(x_range, y_test_basic, label='Test set, basic', marker='.')
-    ax1.plot(x_range, y_train_loocv, label='Training set, LOOC', marker='.')
-    ax1.plot(x_range, y_test_loocv, label='Test set, LOOC', marker='.')
-    ax1.set_xlabel("Number of neighbours")
-    ax1.set_ylabel("Accuracy (%))")
-    ax1.set_title("Accuracy basic vs. LOOC")
-    ax1.legend()
+#     ax1 = fig.add_subplot(1, 1, 1)
+#     ax1.plot(x_range, y_train_basic, label='Training set, basic', marker='.')
+#     ax1.plot(x_range, y_test_basic, label='Test set, basic', marker='.')
+#     ax1.plot(x_range, y_train_loocv, label='Training set, LOOC', marker='.')
+#     ax1.plot(x_range, y_test_loocv, label='Test set, LOOC', marker='.')
+#     ax1.set_xlabel("Number of neighbours")
+#     ax1.set_ylabel("Accuracy (%))")
+#     ax1.set_title("Accuracy basic vs. LOOC")
+#     ax1.legend()
 
-    plt.show()
-    print("test")
+#     plt.show()
+#     print("test")
 
-def plot_kp(train, test, max_k):
-    """
-    IS THIS STILL NEEDED?
-    """
-    x_range = np.linspace(1, max_k, num=max_k)
-    fig = plt.figure()
-    fig.set_figwidth(15)
-    fig.set_figheight(20)
-    _, ncol = train.shape
-    axs = {}
-
-    for i in range(0, ncol):
-        axs[i] = fig.add_subplot(5, 3, i+1)
-        
-        axs[i].plot(x_range, train[:,i], label=f'Training set p = {i+1}', marker='.')
-        axs[i].plot(x_range, test[:,i], label=f'Test set p = {i+1}', marker='.')
-
-        axs[i].set_xlabel("Number of neighbours")
-        axs[i].set_ylabel("Accuracy (%))")
-        axs[i].set_title("Accuracy using k, p")
-        axs[i].legend()
-        
-    plt.show()
-
-def compare_over_kp(x_train, y_train, x_test, y_test, max_k, max_p):
-    """
-    IS THIS STILL NEEDED?
-    """
-    kp_test_predictions = np.zeros((max_k, max_p))
-    kp_train_predictions = np.zeros((max_k, max_p))
-
-    for k in tqdm(range(1,max_k+1)):
-        for p in range(1, max_p+1):
-            minow = partial(minkowski_distance, p=p)
-            clf = KnnClassifier(n_neighbors=k, distance_function=minow)
-            clf.fit(x_train, y_train)
-
-            kp_accuracy_train = clf.looc_parallel(x_train, y_train, return_multiple=True)
-            kp_accuracy_test = clf.looc_parallel(x_test, y_test, return_multiple=True)
-            kp_train_predictions[k-1, p-1] = kp_accuracy_train
-            kp_test_predictions[k-1, p-1] = kp_accuracy_test
-
-    print(kp_train_predictions, "\n\n", kp_test_predictions)
-    plot_kp(kp_train_predictions, kp_test_predictions, max_k)
-
-
-
-
-def test(X, y):
-    """
-    IS THIS STILL NEEDED?
-    """
-    p_max = 15
-    k_max = 20
-    pk = []
-    for p in range(1, p_max + 1):
-        minowski = partial(minkowski_distance, p=p)
-
-        clf = KnnClassifier(distance_function=minowski)
-        labels = clf.looc_parallel(X, y, return_multiple=True, tree_search=False) # use tree search to search with kdtree, this makes it faster, but also increases error
-        loss = []
-        
-        for k in range(1, k_max + 1):
-            loss.append(clf.loss_score(labels, y, n_neighbors=k)) 
-        pk.append(loss)
-
-    pk = np.array(np.reshape(pk, (len(pk), len(pk[0]))))
-    return pk   
-
-def heat_pk(pk):
-    """
-    IS THIS STILL NEEDED?
-    """
-    
-    font = {'family': 'Verdana', 'color': 'black', 'weight': 'normal', 'size': 10,}
-    ax = sns.heatmap(pk, cmap='BuPu', square=True, annot=True, annot_kws={"size": 6}, fmt='.2f')
-    plt.title("Loss for (k, p)", fontdict=font)
-    plt.xlabel('k', fontdict=font)
-    plt.ylabel('p', fontdict=font)
-    ax.invert_yaxis()
-    #plt.axis([1, 20, 1, 15])
-    plt.show()
 
 
 def main():
     sys.setrecursionlimit(10000)
 
-    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=3000, header=None)
-    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=1000, header=None)
+    # for testing plots
+    train_small = pd.read_csv("data/MNIST_train_small.csv", nrows=30, header=None)
+    
+    # train_small = pd.read_csv("data/MNIST_train_small.csv", header=None)
+    test_small  = pd.read_csv("data/MNIST_test_small.csv", nrows=100, header=None)
     
     # split both datasets to digits and labels (the first item in every row is a label):
     x_train = train_small.values[:,1:]
@@ -371,11 +316,17 @@ def main():
     """
     AFTER THIS YOU CAN CALL YOUR METHODS FOR SEPARATE ASSIGNMENT SUBQUESTIONS
     """
-    #plot_loocv_time(x_train, y_train)
-    compare_over_kp(x_train, y_train, x_test, y_test, 15, 20)
-    #q_b(x_train, y_train)
-    #q_d(x_train, y_train, x_test, y_test)
-    #q_g(x_train,y_train,x_test,y_test) 
+    start_time, stop_time = 0, 0
+    start_time = timer()
+    # plot_loocv_time(x_train, y_train)
+    # compare_over_kp(x_train, y_train, x_test, y_test, 4, 4)
+    # q_b(x_train, y_train)
+    q_c(x_train, y_train)
+    # q_d(x_train, y_train, x_test, y_test)
+    # q_g(x_train,y_train,x_test,y_test)
+
+    stop_time = timer()
+    print(f"Time elapsed: {stop_time - start_time}, sec")
 
 
 if __name__ == "__main__":
